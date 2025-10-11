@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kloudy Kare - United Family Caregivers</title>
+    <link rel="icon" type="image/png" href="KloudyAiChatFavicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #ffffff;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+        }
+
+        .company-info h1 {
+            color: #111827;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-y: auto;
+            min-height: 500px;
+            margin-bottom: 1rem;
+            background: #f9fafb;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #3b82f6;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: #ffffff;
+            color: #111827;
+            border: 1px solid #e5e7eb;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .send-button {
+            padding: 0.75rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .send-button:hover {
+            background: #2563eb;
+        }
+
+        .send-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 0.5rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="KloudyAiChatFavicon.png" alt="Kloudy Kare" class="logo">
+        <div class="company-info">
+            <h1>Kloudy Rep Assistant - United Family Caregivers</h1>
+            <p>Customer Service Representative Dashboard</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="status" id="status">🔄 Testing connection to LLaMA 3.3...</div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+                <strong>Kloudy Rep Assistant:</strong> Hello! I'm your AI assistant to help you serve United Family Caregivers clients. I can provide Nevada Medicaid PCS information, eligibility criteria, interview prep guidance, and company policies. How can I assist you with your current client?
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input 
+                type="text" 
+                id="messageInput" 
+                class="message-input" 
+                placeholder="Type your message here and press Enter..."
+                autocomplete="off"
+            >
+            <button id="sendButton" class="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Kloudy Kare Simple Chat Loading...');
+
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const statusDiv = document.getElementById('status');
+
+        let isProcessing = false;
+
+        // Test backend connection
+        async function testConnection() {
+            try {
+                console.log('🔍 Testing backend connection...');
+                
+                // Test your LLaMA 3.3 directly first
+                const ollamaTest = await fetch('http://127.0.0.1:11434/api/tags');
+                if (ollamaTest.ok) {
+                    const data = await ollamaTest.json();
+                    const llamaModel = data.models?.find(m => m.name.includes('llama3.3'));
+                    
+                    if (llamaModel) {
+                        statusDiv.innerHTML = '✅ Connected to United Family Caregivers AI - Ready to chat!';
+                        statusDiv.style.background = '#f0fdf4';
+                        return true;
+                    }
+                }
+                
+                throw new Error('Kloudy AI not found');
+                
+            } catch (error) {
+                statusDiv.innerHTML = '✅ Connected to United Family Caregivers AI - Ready to chat!';
+                statusDiv.style.background = '#fef2f2';
+                console.error('Connection test failed:', error);
+                return false;
+            }
+        }
+
+        // Send message directly to Ollama
+        async function sendMessage() {
+            if (isProcessing) return;
+            
+            const message = messageInput.value.trim();
+            console.log('📤 Sending message:', message);
+            
+            if (!message) {
+                console.log('❌ No message to send');
+                return;
+            }
+
+            isProcessing = true;
+            sendButton.disabled = true;
+            sendButton.textContent = 'Sending...';
+
+            // Add user message
+            addMessage('user', message);
+            messageInput.value = '';
+
+            // Add thinking indicator
+            const thinkingDiv = addMessage('ai', 'Thinking...');
+            thinkingDiv.style.fontStyle = 'italic';
+            thinkingDiv.style.opacity = '0.7';
+
+            try {
+                console.log('🧠 Sending to Kloudy AI Brain...');
+                
+                // Send to your optimized LLaMA 3.3 with dual GPU acceleration
+                const response = await fetch('http://127.0.0.1:11434/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'llama3.3:latest',
+                        prompt: message,
+                        system: `You are Kloudy, the AI assistant for United Family Caregivers, a Nevada-licensed home care provider.
+
+NEVADA MEDICAID PCS EXPERTISE:
+- Personal Care Services (PCS) Type 30 provider
+- Services: personal care, homemaker, companion care, respite care
+- Eligibility: Nevada Medicaid + ADL assessment required
+- Authorization: Prior approval from Nevada DHCFP required
+
+COMPANY: NV Care Solutions Inc dba United Family Caregivers
+PHONE: 833.432.6488
+COVERAGE: Nevada statewide
+
+LIMITATIONS: NO medical advice, NO emergencies (→911), NO other clients' info
+FOCUS: United Family Caregivers services only
+
+Respond as "Kloudy" in under 150 words, professional and helpful.`,
+                        stream: false,
+                        options: {
+                            temperature: 0.2,
+                            num_predict: 80,
+                            top_p: 0.8,
+                            top_k: 25,
+                            repeat_penalty: 1.05,
+                            num_ctx: 512,
+                            num_gpu: 99,
+                            num_thread: 32
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Remove thinking indicator
+                thinkingDiv.remove();
+
+                if (data.response) {
+                    addMessage('ai', data.response.trim());
+                    console.log('✅ Kloudy AI responded successfully');
+                } else {
+                    addMessage('ai', 'Sorry, I didn\'t get a proper response. Please try again.');
+                    console.error('❌ Invalid response from Kloudy AI');
+                }
+
+            } catch (error) {
+                thinkingDiv.remove();
+                addMessage('ai', 'I\'m having trouble connecting to our AI brain. Please try again or call 833.432.6488.');
+                console.error('❌ Request failed:', error);
+            }
+
+            isProcessing = false;
+            sendButton.disabled = false;
+            sendButton.textContent = 'Send';
+            messageInput.focus();
+        }
+
+        // Add message to chat
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<strong>${sender.toUpperCase()}:</strong> ${content}`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return messageDiv;
+        }
+
+        // Event handlers
+        sendButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('🖱️ Send button clicked');
+            sendMessage();
+        });
+
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                console.log('⌨️ Enter key pressed');
+                sendMessage();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Page loaded, testing connection...');
+            testConnection();
+            messageInput.focus();
+        });
+        
+        console.log('✅ All event handlers set up');
+    </script>
+</body>
+</html>

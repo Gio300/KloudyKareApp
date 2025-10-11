@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoDaddy SSH Terminal - Kloudy</title>
+    <link rel="icon" type="image/png" href="KloudyAiChatFavicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2d2d30;
+            padding: 10px 20px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #569cd6;
+            font-size: 18px;
+        }
+
+        .status {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-connected {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-unknown {
+            background: #ff9800;
+            color: white;
+        }
+
+        .terminal-container {
+            height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-output {
+            flex: 1;
+            background: #0c0c0c;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .terminal-line {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+        }
+
+        .terminal-prompt {
+            color: #4caf50;
+        }
+
+        .terminal-command {
+            color: #569cd6;
+        }
+
+        .terminal-output-text {
+            color: #d4d4d4;
+        }
+
+        .terminal-error {
+            color: #f44336;
+        }
+
+        .terminal-input-container {
+            background: #2d2d30;
+            padding: 10px 20px;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .terminal-prompt-display {
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .terminal-input::placeholder {
+            color: #6a6a6a;
+        }
+
+        .quick-commands {
+            background: #2d2d30;
+            padding: 10px 20px;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-command {
+            background: #3e3e42;
+            color: #d4d4d4;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .quick-command:hover {
+            background: #4e4e52;
+        }
+
+        .loading {
+            color: #ff9800;
+        }
+
+        .timestamp {
+            color: #6a6a6a;
+            font-size: 11px;
+        }
+
+        .connection-info {
+            background: #2d2d30;
+            padding: 10px 20px;
+            border-top: 1px solid #3e3e42;
+            font-size: 12px;
+            color: #6a6a6a;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 KloudyKare SSH Terminal</h1>
+        <div class="status">
+            <div id="sshStatus" class="status-indicator status-unknown">SSH: Checking...</div>
+            <div id="hostStatus" class="status-indicator status-unknown">kloudykare.com</div>
+        </div>
+    </div>
+
+    <div class="terminal-container">
+        <div class="terminal-output" id="terminalOutput">
+            <div class="terminal-line">
+                <span class="terminal-prompt">$</span> 
+                <span class="terminal-output-text">Initializing KloudyKare SSH Terminal...</span>
+            </div>
+        </div>
+
+        <div class="quick-commands">
+            <button class="quick-command" onclick="executeQuickCommand('pwd')">pwd</button>
+            <button class="quick-command" onclick="executeQuickCommand('ls -la')">ls -la</button>
+            <button class="quick-command" onclick="executeQuickCommand('df -h')">df -h</button>
+            <button class="quick-command" onclick="executeQuickCommand('free -m')">free -m</button>
+            <button class="quick-command" onclick="executeQuickCommand('uptime')">uptime</button>
+            <button class="quick-command" onclick="executeQuickCommand('whoami')">whoami</button>
+            <button class="quick-command" onclick="executeQuickCommand('ps aux | head -10')">ps aux</button>
+            <button class="quick-command" onclick="checkConnectionStatus()">Refresh Status</button>
+        </div>
+
+        <div class="terminal-input-container">
+            <span class="terminal-prompt-display">$</span>
+            <input type="text" class="terminal-input" id="terminalInput" placeholder="Enter command..." onkeypress="handleKeyPress(event)">
+        </div>
+
+        <div class="connection-info" id="connectionInfo">
+            Connecting to kloudykare.com via SSH key...
+        </div>
+    </div>
+
+    <script>
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        // Initialize terminal
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnectionStatus();
+            document.getElementById('terminalInput').focus();
+        });
+
+        // Check connection status
+        async function checkConnectionStatus() {
+            try {
+                const response = await fetch('/api/ssh/status');
+                const data = await response.json();
+                
+                updateStatus('sshStatus', data.sshAvailable ? 'SSH: Connected' : 'SSH: Disconnected', data.sshAvailable);
+                updateStatus('hostStatus', data.sshAvailable ? 'kloudykare.com: Online' : 'kloudykare.com: Offline', data.sshAvailable);
+                
+                document.getElementById('connectionInfo').textContent = 
+                    `Host: ${data.host} | User: ${data.username} | Key: ${data.keyPath} | Last Check: ${new Date().toLocaleTimeString()}`;
+                
+                if (data.sshAvailable) {
+                    addTerminalLine('✅ Connection established to kloudykare.com via SSH key', 'terminal-output-text');
+                } else {
+                    addTerminalLine(`❌ Connection failed: ${data.sshTest}`, 'terminal-error');
+                }
+            } catch (error) {
+                addTerminalLine(`❌ Status check failed: ${error.message}`, 'terminal-error');
+                updateStatus('sshStatus', 'SSH: Error', false);
+                updateStatus('hostStatus', 'kloudykare.com: Error', false);
+            }
+        }
+
+        // Update status indicator
+        function updateStatus(elementId, text, isConnected) {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = `status-indicator ${isConnected ? 'status-connected' : 'status-disconnected'}`;
+        }
+
+        // Add line to terminal output
+        function addTerminalLine(text, className = 'terminal-output-text') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = `terminal-line ${className}`;
+            
+            const timestamp = document.createElement('span');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = `[${new Date().toLocaleTimeString()}] `;
+            
+            line.appendChild(timestamp);
+            line.appendChild(document.createTextNode(text));
+            output.appendChild(line);
+            
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Execute command
+        async function executeCommand(command) {
+            if (!command.trim()) return;
+            
+            // Add command to history
+            commandHistory.unshift(command);
+            if (commandHistory.length > 50) commandHistory.pop();
+            historyIndex = -1;
+            
+            // Display command
+            addTerminalLine(`$ ${command}`, 'terminal-command');
+            
+            // Show loading
+            const loadingLine = document.createElement('div');
+            loadingLine.className = 'terminal-line loading';
+            loadingLine.textContent = 'Executing...';
+            document.getElementById('terminalOutput').appendChild(loadingLine);
+            
+            try {
+                const response = await fetch('/api/ssh/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading line
+                loadingLine.remove();
+                
+                if (data.success) {
+                    if (data.stdout) {
+                        addTerminalLine(data.stdout, 'terminal-output-text');
+                    }
+                    if (data.stderr) {
+                        addTerminalLine(data.stderr, 'terminal-error');
+                    }
+                    if (data.exitCode !== 0) {
+                        addTerminalLine(`Exit code: ${data.exitCode}`, 'terminal-error');
+                    }
+                } else {
+                    addTerminalLine(`❌ Command failed: ${data.error}`, 'terminal-error');
+                }
+            } catch (error) {
+                loadingLine.remove();
+                addTerminalLine(`❌ Network error: ${error.message}`, 'terminal-error');
+            }
+        }
+
+        // Execute quick command
+        function executeQuickCommand(command) {
+            document.getElementById('terminalInput').value = command;
+            executeCommand(command);
+        }
+
+        // Handle key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                const command = document.getElementById('terminalInput').value;
+                document.getElementById('terminalInput').value = '';
+                executeCommand(command);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    document.getElementById('terminalInput').value = commandHistory[historyIndex];
+                }
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    document.getElementById('terminalInput').value = commandHistory[historyIndex];
+                } else if (historyIndex === 0) {
+                    historyIndex = -1;
+                    document.getElementById('terminalInput').value = '';
+                }
+            }
+        }
+
+        // Auto-refresh status every 30 seconds
+        setInterval(checkConnectionStatus, 30000);
+    </script>
+</body>
+</html>

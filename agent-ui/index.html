@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kloudy Kare - United Family Caregivers</title>
+    <link rel="icon" type="image/png" href="/KloudyAiChatFavicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .header {
+            background: #ffffff;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .company-info h1 {
+            color: #111827;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .company-info p {
+            color: #6b7280;
+            font-size: 0.8rem;
+            margin-top: 0.1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f3f4f6;
+            color: #374151;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .connection-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .phase-indicator {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        /* Main Layout */
+        .main-container {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            width: 100%;
+            height: calc(100vh - 60px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            padding: 1rem;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .sidebar h3 {
+            color: #374151;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+            transition: all 0.15s ease;
+            position: relative;
+            font-size: 0.85rem;
+        }
+
+        .nav-item:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .nav-item.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .nav-item.coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .nav-item.coming-soon::after {
+            content: "Soon";
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.6rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        /* Chat Area */
+        .chat-container {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .chat-header {
+            background: #ffffff;
+            color: #111827;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .chat-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .ai-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .welcome-message {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid #4299e1;
+        }
+
+        .welcome-message h3 {
+            color: #2d3748;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-message p {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .quick-action-btn {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(66, 153, 225, 0.3);
+        }
+
+        .quick-action-btn.coming-soon {
+            background: linear-gradient(135deg, #a0aec0, #718096);
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .quick-action-btn.coming-soon::after {
+            content: "Coming Soon";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ffd700;
+            color: #744210;
+            font-size: 0.7rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Chat Messages */
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            min-height: 400px;
+            max-height: 600px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 1rem;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: #4299e1;
+            color: white;
+        }
+
+        .message-content {
+            background: #f7fafc;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            max-width: 70%;
+            line-height: 1.5;
+            color: #2d3748;
+        }
+
+        .message.user .message-content {
+            background: #4299e1;
+            color: white;
+        }
+
+        /* Data Display in Chat */
+        .data-table {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #667eea;
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .data-card {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-left: 4px solid #4299e1;
+        }
+
+        .data-card h4 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .data-card .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-card .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-card .data-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .data-card .data-value {
+            color: #2d3748;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-badge.pending {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-badge.verified {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+
+        .chart-container {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .progress-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e2e8f0;
+            background: #f7fafc;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            height: 44px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        /* Agent Actions */
+        .agent-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem 2rem;
+            background: #f0f9ff;
+            border-top: 1px solid #e0f2fe;
+            flex-wrap: wrap;
+        }
+
+        .agent-btn {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 0.8rem;
+            background: #ffffff;
+            color: #0369a1;
+            border: 1px solid #0ea5e9;
+        }
+
+        .agent-btn:hover {
+            background: #0ea5e9;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .agent-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .agent-result {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .agent-result h4 {
+            color: #166534;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-result ul {
+            margin-left: 1.5rem;
+            color: #15803d;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 1rem 2rem;
+            font-size: 0.9rem;
+        }
+
+        .footer-services {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-service {
+            padding: 0.3rem 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .footer-service.coming-soon {
+            opacity: 0.6;
+            position: relative;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                padding: 0 1rem;
+                margin: 1rem auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: static;
+            }
+
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header-actions {
+                justify-content: center;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #718096;
+            font-style: italic;
+            padding: 0.5rem 1rem;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #cbd5e0;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo">
+                <img src="KloudyAiChatFavicon.png" alt="Kloudy Kare Logo">
+            </div>
+            <div class="company-info">
+                <h1>Kloudy Kare - United Family Caregivers</h1>
+                <p>Nevada Licensed Home Care Provider • 833.432.6488</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="connection-status">
+                <div class="connection-dot"></div>
+                Connected (8 tasks)
+            </div>
+            <div class="phase-indicator" id="phaseIndicator">
+                EVV Testing
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h3>🛠️ EVV Tools</h3>
+            <a href="#" class="nav-item active" onclick="showSection('chat')">Chat Mirror</a>
+            <a href="#" class="nav-item" onclick="showSection('clients')">Clients</a>
+            <a href="#" class="nav-item" onclick="showSection('employees')">Employees</a>
+            <a href="#" class="nav-item" onclick="showSection('visits')">Visits</a>
+            <a href="#" class="nav-item coming-soon">Testing</a>
+            
+            <h3 style="margin-top: 2rem;">📋 Details</h3>
+            <a href="#" class="nav-item" onclick="showSection('eligibility')">Eligibility</a>
+            <a href="#" class="nav-item" onclick="showSection('authorization')">Authorization</a>
+            <a href="#" class="nav-item" onclick="showSection('billing')">Billing</a>
+            <a href="#" class="nav-item coming-soon">Program Info</a>
+            <a href="#" class="nav-item coming-soon">Care Management</a>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <h2>AI Assistant - Kloudy Kare</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="loginUser()">👤 Login</button>
+                    <button class="btn btn-secondary" onclick="registerUser()">📝 Register</button>
+                    <button class="btn btn-success" onclick="assignToAgent()">🎧 Assign to Agent</button>
+                    <button class="btn btn-secondary coming-soon" disabled>📞 Call Support</button>
+                    <button class="btn btn-secondary" id="devLoginBtn" onclick="devLogin()">🔧 Dev Login</button>
+                </div>
+            </div>
+
+            <!-- Welcome Section -->
+            <div class="welcome-section" id="welcomeSection" style="display: none;">
+                <div class="ai-avatar">AI</div>
+                
+                <div class="welcome-message">
+                    <h3>🌟 Welcome to Kloudy Kare - United Family Caregivers!</h3>
+                    <p><strong>**United Family Caregivers Program**</strong> - Get paid for caring for your loved ones</p>
+                    <p>• Registration and account setup • Program information and eligibility verification • Customer service and support • Care management and coordination</p>
+                    <p><strong>**Please register or login to use this system.**</strong> If you need further assistance, call Kloudy Korp Customer Service: **833.432.6488**</p>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="quickAction('login')">Login</button>
+                    <button class="quick-action-btn" onclick="quickAction('register')">Register</button>
+                    <button class="quick-action-btn" onclick="quickAction('dev_login')" id="devQuickBtn">Dev Login</button>
+                    <button class="quick-action-btn coming-soon">Call</button>
+                    <button class="quick-action-btn" onclick="quickAction('message')">Message</button>
+                    <button class="quick-action-btn" onclick="quickAction('eligibility')">Eligibility</button>
+                    <button class="quick-action-btn coming-soon">Program Info</button>
+                    <button class="quick-action-btn coming-soon">Install App</button>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- Initial AI message -->
+                <div class="message ai">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        <p>🌟 <strong>Welcome to Kloudy Kare - United Family Caregivers!</strong></p>
+                        <p>I'm your AI assistant, here to help you with:</p>
+                        <p>• <strong>United Family Caregivers Program</strong> - Get paid for caring for your loved ones<br>
+                        • Registration and account setup<br>
+                        • Program information and eligibility verification<br>
+                        • Customer service and support<br>
+                        • Care management and coordination</p>
+                        <p><strong>How can I help you today?</strong></p>
+                        <p><em>For urgent assistance, call Kloudy Korp Customer Service: 833.432.6488</em></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <span>AI is typing</span>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+
+            <!-- Agent Actions -->
+            <div class="agent-actions" id="agentActions">
+                <button class="agent-btn" onclick="agentAction('make_note')" title="Create a note from the conversation">
+                    📝 Make Note
+                </button>
+                <button class="agent-btn" onclick="agentAction('create_profile')" title="Create a new profile">
+                    👤 Create Profile
+                </button>
+                <button class="agent-btn" onclick="agentAction('schedule_task')" title="Schedule a task">
+                    📅 Schedule Task
+                </button>
+                <button class="agent-btn" onclick="agentAction('generate_summary')" title="Generate summary of conversation">
+                    📊 Generate Summary
+                </button>
+                <button class="agent-btn" onclick="agentAction('view_notes')" title="View all notes">
+                    📋 View Notes
+                </button>
+                <button class="agent-btn" onclick="agentAction('view_tasks')" title="View all tasks">
+                    ✅ View Tasks
+                </button>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-area" id="chatInputArea">
+                <div class="input-container">
+                    <input 
+                        type="text"
+                        class="chat-input" 
+                        id="messageInput" 
+                        placeholder="Type your message here..."
+                    />
+                    <button class="send-btn" id="sendButton">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-services">
+            <span class="footer-service">Connected to AI Brain</span>
+            <span class="footer-service">MCP Server</span>
+            <span class="footer-service">Database</span>
+            <span class="footer-service coming-soon">Email System</span>
+            <span class="footer-service coming-soon">Team Chat</span>
+            <span class="footer-service coming-soon">Care Management</span>
+        </div>
+        <p>&copy; 2025 NV Care Solutions Inc dba United Family Caregivers. All rights reserved.</p>
+    </div>
+
+    <script>
+        // Application State
+        let currentUser = null;
+        let currentSection = 'chat';
+        let chatHistory = [];
+        let isTyping = false;
+
+        // Initialize app - simplified without phase gates
+        function initializeApp() {
+            const phaseIndicator = document.getElementById('phaseIndicator');
+            const devLoginBtn = document.getElementById('devLoginBtn');
+            const devQuickBtn = document.getElementById('devQuickBtn');
+            
+            // Set to testing mode
+            phaseIndicator.textContent = 'TESTING';
+            phaseIndicator.style.background = '#fef3c7';
+            phaseIndicator.style.color = '#92400e';
+            
+            // Show dev login
+            if (devLoginBtn) devLoginBtn.style.display = 'inline-flex';
+            if (devQuickBtn) devQuickBtn.style.display = 'block';
+        }
+
+        // Get current phase - always testing for now
+        function getPhase() {
+            return 'testing';
+        }
+
+        // Load feature flags - simplified
+        async function loadFeatureFlags() {
+            // Skip API call for now, use defaults
+            console.log('Using default feature configuration');
+        }
+
+        // Update UI based on feature flags
+        function updateUIBasedOnFeatures(config) {
+            const comingSoonElements = document.querySelectorAll('.coming-soon');
+            comingSoonElements.forEach(el => {
+                // You can implement feature-specific logic here
+                // For now, keep the coming soon styling
+            });
+        }
+
+        // Navigation
+        function showSection(section) {
+            currentSection = section;
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Show appropriate content
+            const welcomeSection = document.getElementById('welcomeSection');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatInputArea = document.getElementById('chatInputArea');
+
+            if (section === 'chat') {
+                welcomeSection.style.display = 'block';
+                chatMessages.style.display = 'none';
+                chatInputArea.style.display = 'none';
+            } else {
+                // For other sections, show coming soon message
+                showComingSoon(section);
+            }
+        }
+
+        // Show coming soon message
+        function showComingSoon(section) {
+            const welcomeSection = document.getElementById('welcomeSection');
+            welcomeSection.innerHTML = `
+                <div class="ai-avatar">🚧</div>
+                <div class="welcome-message">
+                    <h3>Coming Soon: ${section.charAt(0).toUpperCase() + section.slice(1)}</h3>
+                    <p>This feature is currently under development and will be available in a future release.</p>
+                    <p>For immediate assistance, please call our support team at <strong>833.432.6488</strong></p>
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="showSection('chat')">Back to Chat</button>
+                </div>
+            `;
+        }
+
+        // Quick Actions
+        function quickAction(action) {
+            switch(action) {
+                case 'login':
+                    loginUser();
+                    break;
+                case 'register':
+                    registerUser();
+                    break;
+                case 'dev_login':
+                    devLogin();
+                    break;
+                case 'message':
+                    startChat();
+                    break;
+                case 'eligibility':
+                    checkEligibility();
+                    break;
+                default:
+                    showComingSoon(action);
+            }
+        }
+
+        // User Actions
+        function loginUser() {
+            // For now, simulate login
+            showMessage('system', 'Login functionality will be integrated with your authentication system. For testing, use Dev Login.');
+        }
+
+        function registerUser() {
+            showMessage('system', 'Registration will be integrated with your user management system.');
+        }
+
+        function devLogin() {
+            if (getPhase() === 'testing') {
+                currentUser = { id: 'dev-user', name: 'Developer', role: 'admin' };
+                showMessage('system', 'Logged in as Developer (Testing Mode)');
+                startChat();
+            }
+        }
+
+        function assignToAgent() {
+            showMessage('system', 'This conversation has been flagged for agent review. An agent will take over shortly.');
+        }
+
+        function checkEligibility() {
+            showMessage('ai', 'I can help you check your eligibility for our services. Could you please provide your ZIP code to get started?');
+            startChat();
+        }
+
+        // Chat Functions
+        function startChat() {
+            const welcomeSection = document.getElementById('welcomeSection');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatInputArea = document.getElementById('chatInputArea');
+
+            welcomeSection.style.display = 'none';
+            chatMessages.style.display = 'block';
+            chatInputArea.style.display = 'block';
+
+            // Focus on input
+            document.getElementById('messageInput').focus();
+        }
+
+        async function sendMessage() {
+            console.log('sendMessage() called');
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            console.log('Message:', message);
+            
+            if (!message || isTyping) {
+                console.log('No message or already typing');
+                return;
+            }
+
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            
+            // Show typing indicator
+            showTyping();
+
+            try {
+                // Send message to AI brain
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.response) {
+                    addMessage('ai', data.response);
+                } else if (data.error) {
+                    addMessage('ai', 'Sorry, I encountered an error: ' + data.error);
+                } else {
+                    addMessage('ai', 'Sorry, I encountered an error processing your message. Please try again.');
+                }
+
+            } catch (error) {
+                hideTyping();
+                console.error('Chat error:', error);
+                
+                // Handle offline/fallback mode
+                handleOfflineResponse(message);
+            }
+        }
+
+        function addMessage(sender, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'ai' ? 'AI' : 'U';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Add to history
+            chatHistory.push({ sender, content, timestamp: new Date() });
+        }
+
+        function showMessage(sender, content) {
+            if (document.getElementById('chatMessages').style.display === 'none') {
+                startChat();
+            }
+            addMessage(sender, content);
+        }
+
+        function showTyping() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.style.display = 'flex';
+            isTyping = true;
+        }
+
+        function hideTyping() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.style.display = 'none';
+            isTyping = false;
+        }
+
+        // Data display functions
+        function addDataMessage(content, data) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'AI';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.innerHTML = content;
+            
+            // Add data visualization
+            if (data) {
+                const dataContainer = document.createElement('div');
+                dataContainer.innerHTML = data;
+                messageContent.appendChild(dataContainer);
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addTableMessage(content, tableData) {
+            const tableHTML = `
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                ${tableData.headers.map(header => `<th>${header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableData.rows.map(row => 
+                                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+                            ).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            addDataMessage(content, tableHTML);
+        }
+
+        function addCardMessage(content, cardData) {
+            const cardHTML = `
+                <div class="data-card">
+                    <h4>${cardData.title}</h4>
+                    ${cardData.rows.map(row => `
+                        <div class="data-row">
+                            <span class="data-label">${row.label}:</span>
+                            <span class="data-value">${row.value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            addDataMessage(content, cardHTML);
+        }
+
+        function addProgressMessage(content, progressData) {
+            const progressHTML = `
+                <div class="chart-container">
+                    <h4>${progressData.title}</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressData.percentage}%"></div>
+                    </div>
+                    <p>${progressData.percentage}% Complete (${progressData.completed}/${progressData.total})</p>
+                </div>
+            `;
+            
+            addDataMessage(content, progressHTML);
+        }
+
+        // Handle AI actions
+        function handleAIActions(actions) {
+            actions.forEach(action => {
+                switch(action.type) {
+                    case 'show_profile':
+                        showUserProfile(action.data);
+                        break;
+                    case 'show_eligibility':
+                        showEligibilityData(action.data);
+                        break;
+                    case 'request_info':
+                        highlightMissingInfo(action.fields);
+                        break;
+                }
+            });
+        }
+
+        function showUserProfile(profileData) {
+            addCardMessage("Here's your current profile information:", {
+                title: "User Profile",
+                rows: [
+                    { label: "Name", value: `${profileData.firstName} ${profileData.lastName}` },
+                    { label: "Phone", value: profileData.phone },
+                    { label: "ZIP Code", value: profileData.zipCode || 'Not provided' },
+                    { label: "Medicaid ID", value: profileData.medicaidId || 'Not provided' },
+                    { label: "Profile Status", value: `<span class="status-badge ${profileData.status}">${profileData.status}</span>` }
+                ]
+            });
+            
+            if (profileData.completionPercentage) {
+                addProgressMessage("Profile completion:", {
+                    title: "Profile Completeness",
+                    percentage: profileData.completionPercentage,
+                    completed: Math.round(profileData.completionPercentage * 10 / 100),
+                    total: 10
+                });
+            }
+        }
+
+        function showEligibilityData(eligibilityData) {
+            addTableMessage("Here's your eligibility information:", {
+                headers: ["Payer", "Program", "Status", "Coverage Period", "Monthly Hours"],
+                rows: [[
+                    eligibilityData.payer || 'N/A',
+                    eligibilityData.program || 'N/A', 
+                    `<span class="status-badge ${eligibilityData.status}">${eligibilityData.status}</span>`,
+                    `${eligibilityData.startDate || 'N/A'} - ${eligibilityData.endDate || 'N/A'}`,
+                    eligibilityData.monthlyHours || 'N/A'
+                ]]
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+                return false;
+            }
+        }
+
+        // Add click handler for send button
+        function setupEventHandlers() {
+            console.log('Setting up event handlers...');
+            
+            const sendBtn = document.getElementById('sendButton');
+            const messageInput = document.getElementById('messageInput');
+            
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Send button clicked!');
+                    sendMessage();
+                });
+                console.log('✅ Send button handler added');
+            } else {
+                console.log('❌ Send button not found');
+            }
+            
+            if (messageInput) {
+                messageInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        console.log('Enter key pressed!');
+                        sendMessage();
+                        return false;
+                    }
+                });
+                console.log('✅ Input keydown handler added');
+            } else {
+                console.log('❌ Message input not found');
+            }
+        }
+
+        // Utility functions
+        function getSessionId() {
+            let sessionId = localStorage.getItem('kloudy_session_id');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('kloudy_session_id', sessionId);
+            }
+            return sessionId;
+        }
+
+        function handleOfflineResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            if (lowerMessage.includes('test')) {
+                testChatFunctionality();
+                return;
+            }
+            
+            if (lowerMessage.includes('profile') || lowerMessage.includes('my info')) {
+                addMessage('ai', 'I\'m currently offline, but here\'s a sample of what your profile would look like:');
+                setTimeout(() => {
+                    showUserProfile({
+                        firstName: 'John',
+                        lastName: 'Smith',
+                        phone: '+15551234567',
+                        zipCode: '89101',
+                        medicaidId: 'NV123456789',
+                        status: 'verified',
+                        completionPercentage: 75
+                    });
+                }, 1000);
+                return;
+            }
+            
+            if (lowerMessage.includes('eligible') || lowerMessage.includes('coverage')) {
+                addMessage('ai', 'Here\'s a sample eligibility display (system currently offline):');
+                setTimeout(() => {
+                    showEligibilityData({
+                        payer: 'Nevada Medicaid',
+                        program: 'PCS Type 30',
+                        status: 'active',
+                        startDate: '2025-01-01',
+                        endDate: '2025-12-31',
+                        monthlyHours: 120
+                    });
+                }, 1000);
+                return;
+            }
+            
+            if (lowerMessage.includes('visit') || lowerMessage.includes('appointment')) {
+                addMessage('ai', 'Here\'s a sample visits table (system currently offline):');
+                setTimeout(() => {
+                    addTableMessage('Sample recent visits:', {
+                        headers: ['Date', 'Caregiver', 'Hours', 'Status'],
+                        rows: [
+                            ['2025-01-15', 'Mary Johnson', '4.0', '<span class="status-badge active">Completed</span>'],
+                            ['2025-01-14', 'Mary Johnson', '3.5', '<span class="status-badge active">Completed</span>'],
+                            ['2025-01-13', 'Mary Johnson', '4.0', '<span class="status-badge pending">Pending</span>']
+                        ]
+                    });
+                }, 1000);
+                return;
+            }
+            
+            // Default offline response
+            addMessage('ai', `I'm currently having trouble connecting to our servers, but I'm still here to help! 
+
+For immediate assistance with United Family Caregivers services, please call **833.432.6488**.
+
+You can also try:
+• Typing "test" to see sample data displays
+• Typing "profile" to see a sample profile
+• Typing "visits" to see sample visit data
+• Typing "eligibility" to see sample eligibility info
+
+Our system will be back online shortly!`);
+        }
+
+        function testChatFunctionality() {
+            // Test data display functions
+            setTimeout(() => {
+                addMessage('ai', 'Let me show you some sample data displays:');
+            }, 1000);
+
+            setTimeout(() => {
+                showUserProfile({
+                    firstName: 'John',
+                    lastName: 'Smith',
+                    phone: '+15551234567',
+                    zipCode: '89101',
+                    medicaidId: 'NV123456789',
+                    status: 'verified',
+                    completionPercentage: 75
+                });
+            }, 2000);
+
+            setTimeout(() => {
+                showEligibilityData({
+                    payer: 'Nevada Medicaid',
+                    program: 'PCS Type 30',
+                    status: 'active',
+                    startDate: '2025-01-01',
+                    endDate: '2025-12-31',
+                    monthlyHours: 120
+                });
+            }, 3000);
+
+            setTimeout(() => {
+                addTableMessage('Here are your recent visits:', {
+                    headers: ['Date', 'Caregiver', 'Hours', 'Status'],
+                    rows: [
+                        ['2025-01-15', 'Mary Johnson', '4.0', '<span class="status-badge active">Completed</span>'],
+                        ['2025-01-14', 'Mary Johnson', '3.5', '<span class="status-badge active">Completed</span>'],
+                        ['2025-01-13', 'Mary Johnson', '4.0', '<span class="status-badge pending">Pending</span>']
+                    ]
+                });
+            }, 4000);
+        }
+
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Page loaded, initializing...');
+            
+            initializeApp();
+            setupEventHandlers();
+            
+            // Start with chat interface visible
+            startChat();
+            
+            // Test functionality in development
+            setTimeout(() => {
+                addMessage('ai', 'Welcome! I\'m ready to chat. Type "hello" to test the input, or ask me about Nevada Medicaid services.');
+            }, 500);
+            
+            // Focus on input after setup
+            setTimeout(() => {
+                const input = document.getElementById('messageInput');
+                if (input) {
+                    input.focus();
+                    console.log('✅ Input focused');
+                }
+            }, 1000);
+        });
+
+        // Input is now a simple text input, no auto-resize needed
+
+        // Agent Actions
+        async function agentAction(action) {
+            console.log('Agent action:', action);
+            
+            const sessionId = getSessionId();
+            
+            switch(action) {
+                case 'make_note':
+                    await makeNoteAction(sessionId);
+                    break;
+                case 'create_profile':
+                    await createProfileAction(sessionId);
+                    break;
+                case 'schedule_task':
+                    await scheduleTaskAction(sessionId);
+                    break;
+                case 'generate_summary':
+                    await generateSummaryAction(sessionId);
+                    break;
+                case 'view_notes':
+                    await viewNotesAction(sessionId);
+                    break;
+                case 'view_tasks':
+                    await viewTasksAction(sessionId);
+                    break;
+                default:
+                    addMessage('system', `Agent action "${action}" not implemented yet.`);
+            }
+        }
+
+        async function makeNoteAction(sessionId) {
+            const content = prompt('Enter note content:');
+            if (!content) return;
+
+            const context = prompt('Context (optional):', 'From admin chat');
+
+            showTyping();
+
+            try {
+                const response = await fetch('/api/agent/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'make_note',
+                        sessionId,
+                        data: {
+                            content,
+                            context,
+                            sessionId,
+                            userId: currentUser?.id || null
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.success) {
+                    const note = data.result.note;
+                    const aiSuggestions = data.result.aiSuggestions;
+                    
+                    addMessage('ai', `✅ Note created successfully!`);
+                    
+                    const resultHTML = `
+                        <div class="agent-result">
+                            <h4>📝 ${note.title}</h4>
+                            <p><strong>Category:</strong> ${note.category}</p>
+                            <p><strong>Priority:</strong> ${note.priority}</p>
+                            ${aiSuggestions.actionItems && aiSuggestions.actionItems.length > 0 ? 
+                                `<p><strong>Action Items:</strong></p><ul>${aiSuggestions.actionItems.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
+                        </div>
+                    `;
+                    
+                    addDataMessage('', resultHTML);
+                } else {
+                    addMessage('ai', 'Failed to create note. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Make note error:', error);
+                addMessage('ai', 'Error creating note. Please try again.');
+            }
+        }
+
+        async function createProfileAction(sessionId) {
+            const name = prompt('Enter name:');
+            if (!name) return;
+
+            const phone = prompt('Enter phone (optional):');
+            const email = prompt('Enter email (optional):');
+            const role = prompt('Enter role (optional):', 'client');
+
+            showTyping();
+
+            try {
+                const response = await fetch('/api/agent/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create_profile',
+                        sessionId,
+                        data: {
+                            name,
+                            phone,
+                            email,
+                            role
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.success) {
+                    const profile = data.result.profile;
+                    const aiSuggestions = data.result.aiSuggestions;
+                    
+                    addMessage('ai', `✅ Profile created for ${name}!`);
+                    
+                    const resultHTML = `
+                        <div class="agent-result">
+                            <h4>👤 Profile: ${profile.name}</h4>
+                            <p><strong>Phone:</strong> ${profile.phone || 'Not provided'}</p>
+                            <p><strong>Email:</strong> ${profile.email || 'Not provided'}</p>
+                            <p><strong>Role:</strong> ${profile.role}</p>
+                            <p><strong>Completeness:</strong> ${profile.completeness}%</p>
+                            ${aiSuggestions.missingInfo && aiSuggestions.missingInfo.length > 0 ? 
+                                `<p><strong>Missing Info:</strong></p><ul>${aiSuggestions.missingInfo.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
+                        </div>
+                    `;
+                    
+                    addDataMessage('', resultHTML);
+                } else {
+                    addMessage('ai', 'Failed to create profile. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Create profile error:', error);
+                addMessage('ai', 'Error creating profile. Please try again.');
+            }
+        }
+
+        async function scheduleTaskAction(sessionId) {
+            const title = prompt('Enter task title:');
+            if (!title) return;
+
+            const description = prompt('Enter description (optional):');
+            const dueDate = prompt('Due date (YYYY-MM-DD):');
+            const priority = prompt('Priority (low/medium/high):', 'medium');
+
+            showTyping();
+
+            try {
+                const response = await fetch('/api/agent/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'schedule_task',
+                        sessionId,
+                        data: {
+                            title,
+                            description,
+                            dueDate,
+                            priority
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.success) {
+                    const task = data.result.task;
+                    const aiSuggestions = data.result.aiSuggestions;
+                    
+                    addMessage('ai', `✅ Task scheduled: ${title}`);
+                    
+                    const resultHTML = `
+                        <div class="agent-result">
+                            <h4>📅 ${task.title}</h4>
+                            <p><strong>Category:</strong> ${task.category}</p>
+                            <p><strong>Priority:</strong> ${task.priority}</p>
+                            <p><strong>Estimated Time:</strong> ${task.estimatedTime} minutes</p>
+                            <p><strong>Due:</strong> ${task.dueDate || 'Not set'}</p>
+                            ${aiSuggestions.prerequisites && aiSuggestions.prerequisites.length > 0 ? 
+                                `<p><strong>Prerequisites:</strong></p><ul>${aiSuggestions.prerequisites.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
+                        </div>
+                    `;
+                    
+                    addDataMessage('', resultHTML);
+                } else {
+                    addMessage('ai', 'Failed to schedule task. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Schedule task error:', error);
+                addMessage('ai', 'Error scheduling task. Please try again.');
+            }
+        }
+
+        async function generateSummaryAction(sessionId) {
+            // Get last 10 messages from chat history
+            const recentMessages = chatHistory.slice(-10);
+            const content = recentMessages.map(m => `${m.sender}: ${m.content}`).join('\n');
+
+            if (!content) {
+                addMessage('ai', 'No conversation to summarize.');
+                return;
+            }
+
+            showTyping();
+
+            try {
+                const response = await fetch('/api/agent/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'generate_summary',
+                        sessionId,
+                        data: {
+                            content,
+                            type: 'conversation'
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.success) {
+                    const summary = data.result.summary;
+                    
+                    addMessage('ai', '📊 Conversation Summary:');
+                    
+                    const resultHTML = `
+                        <div class="agent-result">
+                            <h4>Executive Summary</h4>
+                            <p>${summary.summary}</p>
+                            ${summary.keyPoints && summary.keyPoints.length > 0 ? 
+                                `<p><strong>Key Points:</strong></p><ul>${summary.keyPoints.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
+                            ${summary.actionItems && summary.actionItems.length > 0 ? 
+                                `<p><strong>Action Items:</strong></p><ul>${summary.actionItems.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
+                        </div>
+                    `;
+                    
+                    addDataMessage('', resultHTML);
+                } else {
+                    addMessage('ai', 'Failed to generate summary. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Generate summary error:', error);
+                addMessage('ai', 'Error generating summary. Please try again.');
+            }
+        }
+
+        async function viewNotesAction(sessionId) {
+            showTyping();
+
+            try {
+                const response = await fetch(`/api/agent/notes?sessionId=${sessionId}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.success) {
+                    const notes = data.notes;
+                    
+                    if (notes.length === 0) {
+                        addMessage('ai', 'No notes found.');
+                        return;
+                    }
+                    
+                    addMessage('ai', `📋 Found ${notes.length} note(s):`);
+                    
+                    notes.forEach(note => {
+                        const resultHTML = `
+                            <div class="agent-result">
+                                <h4>📝 ${note.title}</h4>
+                                <p>${note.content}</p>
+                                <p><strong>Category:</strong> ${note.category} | <strong>Priority:</strong> ${note.priority}</p>
+                                <p><strong>Created:</strong> ${new Date(note.created_at).toLocaleString()}</p>
+                            </div>
+                        `;
+                        addDataMessage('', resultHTML);
+                    });
+                } else {
+                    addMessage('ai', 'Failed to retrieve notes. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('View notes error:', error);
+                addMessage('ai', 'Error retrieving notes. Please try again.');
+            }
+        }
+
+        async function viewTasksAction(sessionId) {
+            showTyping();
+
+            try {
+                const response = await fetch(`/api/agent/tasks?sessionId=${sessionId}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.success) {
+                    const tasks = data.tasks;
+                    
+                    if (tasks.length === 0) {
+                        addMessage('ai', 'No tasks found.');
+                        return;
+                    }
+                    
+                    addMessage('ai', `✅ Found ${tasks.length} task(s):`);
+                    
+                    tasks.forEach(task => {
+                        const resultHTML = `
+                            <div class="agent-result">
+                                <h4>📅 ${task.title}</h4>
+                                <p>${task.description || 'No description'}</p>
+                                <p><strong>Priority:</strong> ${task.priority} | <strong>Status:</strong> ${task.status}</p>
+                                <p><strong>Due:</strong> ${task.due_date || 'Not set'}</p>
+                                <p><strong>Created:</strong> ${new Date(task.created_at).toLocaleString()}</p>
+                            </div>
+                        `;
+                        addDataMessage('', resultHTML);
+                    });
+                } else {
+                    addMessage('ai', 'Failed to retrieve tasks. Please try again.');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('View tasks error:', error);
+                addMessage('ai', 'Error retrieving tasks. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (NEVER commit credentials!)
+.env
+.env.*
+env.sbx
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Screenshots and test files
+*.png
+*.jpg
+*.jpeg
+sandata-test-files/*.pdf
+sandata-*.json
+sandata-*.txt
+
+# Backend code (keep on VPS only, not in public repo)
+api/
+mcp/
+contracts/
+scripts/deploy-*.sh
+scripts/upload-*.bat
+scripts/*sandata*.js
+scripts/*twilio*.js
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build outputs
+dist/
+build/
+*.zip
+*.tar.gz
+
+# Sensitive docs
+DEPLOYMENT_*.md
+*_CREDENTIALS.md
+

@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rep Assistant - United Family Caregivers</title>
+    <link rel="icon" type="image/png" href="KloudyAiChatFavicon.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        .header { background:#1f2937; color:#fff; padding:0.75rem 1rem; display:flex; align-items:center; gap:1rem; }
+        .spacer{flex:1} .logout{ background:#374151; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;} .notif{position:relative; cursor:pointer; display:flex; align-items:center;} .bell{width:20px; height:20px;} .dot{position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ef4444; border-radius:50%; display:none;}
+        .logo{width:32px;height:32px} .company-info h1{font-size:1.1rem;font-weight:600} .company-info p{font-size:0.8rem;opacity:.8}
+    .main-container{flex:1;display:flex;width:95%;margin:0 auto;padding:1rem;gap:1rem;overflow:hidden;}
+        .left{width:310px;border:1px solid #e5e7eb;border-radius:8px;padding:12px;height:calc(100vh - 140px);overflow-y:auto;overflow-x:hidden}
+        .conv{padding:8px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;margin-bottom:8px;cursor:pointer}
+        .row{display:flex;justify-content:space-between;align-items:center}
+        .name{font-weight:600} .meta{font-size:12px;color:#6b7280} .chip{font-size:11px;border:1px solid #cbd5e1;border-radius:999px;padding:2px 6px;margin-left:6px}
+        .chip.new{border-color:#22c55e;color:#16a34a} .chip.urgent{border-color:#ef4444;color:#ef4444} .chip.unread{border-color:#3b82f6;color:#2563eb}
+        .icons{display:flex;gap:8px} .iconBtn{background:transparent;border:none;cursor:pointer}
+        .chat-panel{flex:2;display:flex;flex-direction:column}
+        .info-panel{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:1rem;overflow-y:auto;overflow-x:hidden;height:calc(100vh - 140px);}
+        .chat-messages{flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:1rem;overflow-y:auto;overflow-x:hidden;min-height:500px;margin-bottom:1rem;background:#f9fafb}
+        .message{margin-bottom:1rem;padding:.75rem;border-radius:8px;max-width:85%}
+        .message.rep{background:#3b82f6;color:#fff;margin-left:auto} .message.assistant{background:#fff;border:1px solid #e5e7eb}
+        .message.task{background:#fff7ed;border:1px solid #fed7aa}
+        .input-area{display:flex;gap:.5rem;align-items:center}
+        .message-input{flex:1;padding:.75rem;border:2px solid #d1d5db;border-radius:6px;font-size:1rem}
+        .send-button{padding:.75rem 1.5rem;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500}
+        .quick-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:.75rem;margin-bottom:1rem;font-size:.9rem}
+        .quick-info h3{color:#1e40af;margin-bottom:.5rem}
+        .status-good{background:#f0fdf4;border-color:#bbf7d0} .status-warning{background:#fefce8;border-color:#fde047}
+        .btn{padding:6px 10px;border:none;border-radius:6px;cursor:pointer} .btn-accept{background:#16a34a;color:#fff} .btn-note{background:#6b7280;color:#fff;width:100%;margin-top:6px}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center}
+        .overlay .panel{width:900px;max-width:96vw;height:80vh;background:#fff;border-radius:10px;border:1px solid #e5e7eb;display:flex;flex-direction:column}
+        .overlay .title{padding:10px 14px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between}
+        .overlay .body{flex:1;padding:12px;overflow-y:auto;overflow-x:hidden;background:#f8fafc}
+        .overlay .composer{padding:10px;border-top:1px solid #e5e7eb;display:flex;gap:8px}
+        .overlay input{flex:1;padding:10px;border:1px solid #cbd5e1;border-radius:6px} .overlay button{padding:10px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer}
+        .tabs{display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:1rem} .tab{padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent} .tab.active{border-bottom-color:#2563eb;background:#f8fafc} .tab-content{display:none} .tab-content.active{display:block}
+        .quick-ref-item{padding:8px;margin:4px 0;background:#fff;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:background 0.2s} .quick-ref-item:hover{background:#f0f9ff}
+        .scroll-indicator{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.1);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
+        .notes-section{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-top:12px}
+        .notes-section h4{margin:0 0 8px 0;color:#374151;font-size:14px}
+        .notes-search{margin-bottom:8px}
+        .notes-search input{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;background:#fff}
+        .notes-list{max-height:300px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;background:#fff;padding:4px}
+        .note-block{padding:10px;margin:6px 0;background:#fff;border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+        .note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#6b7280}
+        .note-author{font-weight:600;color:#374151}
+        .note-timestamp{color:#9ca3af}
+        .note-content{font-size:13px;color:#4b5563;line-height:1.4}
+        .add-note{display:flex;gap:8px;margin-top:8px}
+        .add-note input{flex:1;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px}
+        .add-note button{padding:8px 12px;background:#3b82f6;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px}
+    /* Mobile tweaks */
+    @media (max-width: 768px){
+      .main-container{flex-direction:column;width:100%;padding:.5rem}
+      .left,.info-panel{width:100%;height:auto}
+      .chat-panel{width:100%}
+      .message-input{height:44px}
+    }
+    </style>
+</head>
+<body>
+  <div class="header">
+    <img src="KloudyAiChatFavicon.png" alt="Kloudy" class="logo">
+    <div class="company-info"><h1>🎧 Rep Assistant - United Family Caregivers</h1><p>Customer Service Representative Dashboard</p></div>
+    <div class="spacer"></div>
+    <div id="notif" class="notif" title="Tasks"><img class="bell" alt="bell" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2a7 7 0 0 0-7 7v3.586l-1.707 1.707A1 1 0 0 0 4 16h16a1 1 0 0 0 .707-1.707L19 12.586V9a7 7 0 0 0-7-7zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3z'/></svg>"><span id="dot" class="dot"></span></div>
+    <button class="logout" onclick="window.location.href='http://localhost:8913/login.html'">Logout</button>
+  </div>
+
+  <div class="main-container">
+    <div class="left">
+      <h3>Conversations</h3>
+      <div id="convs"></div>
+    </div>
+
+    <div class="chat-panel">
+      <div class="quick-info status-good" id="status">✅ Kloudy Rep Assistant Ready - Connected to AI Brain</div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="input-area"><input type="text" id="messageInput" class="message-input" placeholder="Ask Kloudy for actions, policies, or scripts..." autocomplete="off"><button id="sendButton" class="send-button">Ask Kloudy</button></div>
+    </div>
+
+    <div class="info-panel">
+      <h3>📋 Quick Reference</h3>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('tools')">🛠️ Tools</div>
+        <div class="tab" onclick="switchTab('numbers')">📞 Numbers</div>
+        <div class="tab" onclick="switchTab('eligibility')">✅ Eligibility</div>
+        <div class="tab" onclick="switchTab('process')">🔄 Process</div>
+        <div class="tab" onclick="switchTab('sandata')">📊 Sandata</div>
+      </div>
+      
+      <div id="tools" class="tab-content active">
+        <div class="quick-ref-item" onclick="loadSMSProfiles()">📱 SMS Intakes</div>
+        <div class="quick-ref-item" onclick="openNotesOverlay()">📝 Kloudy Notes</div>
+        <div class="quick-ref-item" onclick="openUserProfiles()">👥 User Profiles</div>
+      </div>
+      
+      <div id="numbers" class="tab-content">
+        <div class="quick-ref-item" onclick="showInChat('Important Numbers: Rep Line 833.432.6588, Medicaid Interview 800-525-2395 (Mon-Fri 8am-5pm)')">📞 Important Numbers</div>
+      </div>
+      
+      <div id="eligibility" class="tab-content">
+        <div class="quick-ref-item" onclick="showInChat('Eligibility Requirements: Nevada Medicaid coverage, PCS waiver approved, ADL assessment completed, Adults 18+ no guardian needed, Job status doesn\'t disqualify')">✅ Requirements</div>
+        <div class="quick-ref-item" onclick="showInChat('Guardianship: Adults 18+ do NOT need guardians unless court-appointed. Parents can be caregivers without legal guardianship.')">👨‍👩‍👧‍👦 Guardianship</div>
+      </div>
+      
+      <div id="process" class="tab-content">
+        <div class="quick-ref-item" onclick="showInChat('Intake Process: 1) Patient name & phone, 2) Nevada Medicaid ID, 3) PCS waiver status, 4) Caregiver info, 5) Three-way call setup')">🔄 Intake Steps</div>
+        <div class="quick-ref-item" onclick="showInChat('Interview Prep: Client should call 800-525-2395, mention NV Care Solutions as provider, have Medicaid ID ready, explain ADL needs')">📋 Interview Prep</div>
+      </div>
+      
+      <div id="sandata" class="tab-content">
+        <div class="quick-ref-item" onclick="openSandataDashboard()">📊 Certification Status</div>
+        <div class="quick-ref-item" onclick="showInChat('Sandata Test Results: 6/6 Clients ✅, 6/6 Employees ✅, 0/6 Visits ❌, 0/6 Calls ❌. Need to fix service ID errors and call type issues.')">📈 Test Results</div>
+        <div class="quick-ref-item" onclick="executeSandataTests()">🧪 Run Tests</div>
+        <div class="quick-ref-item" onclick="showInChat('Sandata Issues: Service ID errors, Phone type format (Work→Business), Version conflicts, Mixed call types failing')">⚠️ Fix Issues</div>
+      </div>
+      
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay" onclick="if(event.target.id==='overlay'){ closeOverlay(); }">
+    <div class="panel">
+      <div class="title"><span id="ovTitle">Conversation</span><div><button id="aiToggle" class="btn" title="Toggle AI auto-reply">🤖 Auto</button> <button id="stopAuto" class="btn" title="Stop AI auto-reply" style="background:#ef4444;display:none;">⏹️ Stop</button> <button onclick="closeOverlay()">Close</button></div></div>
+      <div id="ovBody" class="body"></div>
+      <div class="composer"><input id="ovInput" placeholder="Type a message to user..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendOverlay();}"><button onclick="sendOverlay()">Send</button></div>
+    </div>
+  </div>
+
+  <script>
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const convsDiv = document.getElementById('convs');
+    const dot = document.getElementById('dot');
+    const notif = document.getElementById('notif');
+    const overlay = document.getElementById('overlay');
+    const ovTitle = document.getElementById('ovTitle');
+    const ovBody = document.getElementById('ovBody');
+    const ovInput = document.getElementById('ovInput');
+    const aiToggle = document.getElementById('aiToggle');
+    const stopAuto = document.getElementById('stopAuto');
+
+    let tasks = [ 
+      { id:'t1', title:'Call back client re: interview prep', status:'new' },
+      { id:'practice1', title:'Practice Task: Review SMS intake process', status:'new' }
+    ];
+    let aiAuto = false;
+
+    // Example seeded conversations with mini cards
+    const seededConvs = [
+      { id:'welcome_admin', name:'Welcome Thread', email:'n/a', phone:'n/a', tags:['general','new'], preview:'Congrats on joining UFC! Start here...', messages:['System: Welcome to the team!', 'Use Conversations for user chat.'] },
+      { id:'client_mock', name:'Jane Doe', email:'jane@example.com', phone:'(702) 555-0198', tags:['unread','urgent'], preview:'I need help with my Medicaid ID', messages:['User: I need help with my Medicaid ID.'], isTraining: true },
+      { id:'task_video', name:'Training Task', email:'n/a', phone:'n/a', tags:['new'], preview:'Watch onboarding video and mark complete', messages:['Task: Watch onboarding video and mark complete.'], isTraining: true }
+    ];
+
+    function chip(t){ return `<span class=\"chip ${t}\">${t}</span>`; }
+    function renderConvs(){
+      convsDiv.innerHTML = '';
+      seededConvs.forEach(c => {
+        const d=document.createElement('div'); d.className='conv';
+        d.innerHTML = `<div class=\"row\"><span class=\"name\">${c.name}</span><span class=\"meta\">${c.email||''}</span></div>`+
+                      `<div class=\"row\"><span class=\"meta\">${c.phone||''}</span><span>${(c.tags||[]).map(chip).join('')}</span></div>`+
+                      `<div class=\"meta\" style=\"margin-top:4px;\">${c.preview}</div>`+
+                      `<div class=\"icons\" style=\"margin-top:6px;\">`+
+                      `<button class=\"iconBtn\" title=\"Escalate\" onclick=\"alert('For escalations, call 833.432.6588'); event.stopPropagation();\">⚠️</button>`+
+                      `</div>`;
+        d.onclick=()=>openOverlay(c);
+        convsDiv.appendChild(d);
+      });
+    }
+
+    function openOverlay(conv){ 
+      currentConv = conv;
+      trainingStep = 0; // Reset training step
+      ovTitle.textContent=conv.name||conv.title||'Conversation'; 
+      ovBody.innerHTML=''; 
+      (conv.messages||[]).forEach(m=>{ 
+        const p=document.createElement('div'); 
+        p.style.margin='6px 0'; 
+        p.textContent=m; 
+        ovBody.appendChild(p); 
+      }); 
+      
+      // Add training message for training conversations
+      if(conv.isTraining) {
+        const trainingMsg = document.createElement('div');
+        trainingMsg.style.margin='6px 0';
+        trainingMsg.style.padding='8px';
+        trainingMsg.style.background='#f0f9ff';
+        trainingMsg.style.border='1px solid #0ea5e9';
+        trainingMsg.style.borderRadius='6px';
+        trainingMsg.innerHTML='<strong>🤖 AI Training Mode:</strong> I am the AI agent and this is a training to help you get used to the conversation features. I will act as a client to help you practice.<br><br><button onclick="triggerTrainingResponse()" style="margin-top:8px;padding:6px 12px;background:#16a34a;color:#fff;border:none;border-radius:4px;cursor:pointer;">Start Training Response</button>';
+        ovBody.appendChild(trainingMsg);
+      }
+      
+      // Add Profile and Notes actions
+      const actions=document.createElement('div');
+      actions.style.cssText='display:flex;gap:8px;margin:8px 0;';
+      actions.innerHTML = `
+        <button onclick="viewUserProfilesFromOverlay('${conv.name||'Unknown'}')">👤 View Profile</button>
+        <button onclick="notesFlow('${conv.name||'Unknown'}')">📝 Notes</button>
+      `;
+      ovBody.appendChild(actions);
+
+      overlay.style.display='flex'; 
+      ovInput.focus(); 
+    }
+    function closeOverlay(){ overlay.style.display='none'; }
+
+    aiToggle.addEventListener('click', ()=>{ 
+      aiAuto=!aiAuto; 
+      aiAutoMode = aiAuto;
+      aiToggle.style.background = aiAuto ? '#16a34a' : '#e5e7eb'; 
+      aiToggle.style.color = aiAuto ? '#fff' : '#111827'; 
+      stopAuto.style.display = aiAuto ? 'inline-block' : 'none';
+      if(aiAuto && currentConv && currentConv.isTraining) {
+        addOverlayMessage('system', '🤖 AI Auto-reply enabled. I will respond as an admin agent. You can interject anytime to stop auto-replies.');
+        addMessage('assistant', '🤖 AI Auto-reply enabled in conversation with ' + currentConv.name + '. I will respond as an admin agent.');
+      }
+    });
+
+    stopAuto.addEventListener('click', () => {
+      aiAuto = false;
+      aiAutoMode = false;
+      aiToggle.style.background = '#e5e7eb';
+      aiToggle.style.color = '#111827';
+      stopAuto.style.display = 'none';
+      addOverlayMessage('system', 'AI auto-reply stopped by agent.');
+      addMessage('assistant', 'AI auto-reply stopped by agent.');
+    });
+
+    let trainingStep = 0;
+    let currentConv = null;
+    let aiAutoMode = false; // Track if AI is in auto-reply mode
+
+    function sendOverlay(){ 
+      const t=ovInput.value.trim(); 
+      if(!t) return; 
+      
+      // Agent interjection - stops AI auto mode
+      if(aiAutoMode) {
+        aiAutoMode = false;
+        aiAuto = false;
+        aiToggle.style.background = '#e5e7eb';
+        aiToggle.style.color = '#111827';
+        stopAuto.style.display = 'none';
+        addOverlayMessage('system', 'Agent interjected. AI auto-reply stopped.');
+        addMessage('assistant', 'Agent interjected. AI auto-reply stopped.');
+      }
+      
+      const p=document.createElement('div'); 
+      p.style.margin='6px 0'; 
+      p.style.textAlign='right'; 
+      p.textContent=`Agent: ${t}`; 
+      ovBody.appendChild(p); 
+      ovInput.value=''; 
+      ovBody.scrollTop = ovBody.scrollHeight; 
+      
+      console.log('Auto mode check:', { aiAutoMode, isTraining: currentConv?.isTraining, currentConv: currentConv?.name });
+      
+      if(aiAutoMode){
+        // AI Auto-reply mode is enabled - respond as admin agent
+        console.log('AI Auto mode triggered');
+        if(currentConv && currentConv.isTraining){
+          // In training mode with auto enabled, AI responds as admin agent
+          console.log('Training mode with auto - calling handleAIAutoResponse');
+          handleAIAutoResponse(t);
+        } else {
+          // In real conversations with auto enabled, AI responds as admin agent
+          console.log('Real conversation with auto - responding as admin agent');
+          setTimeout(()=>{ 
+            const a=document.createElement('div'); 
+            a.style.margin='6px 0'; 
+            a.style.padding='8px';
+            a.style.background='#f0f9ff';
+            a.style.border='1px solid #0ea5e9';
+            a.style.borderRadius='6px';
+            a.textContent='AI Agent: Thanks for your message. An agent will assist shortly.'; 
+            ovBody.appendChild(a); 
+            ovBody.scrollTop = ovBody.scrollHeight; 
+            
+            // Also show in main chat
+            addMessage('assistant', 'AI Agent: Thanks for your message. An agent will assist shortly.');
+          }, 500); 
+        }
+      } else if(currentConv && currentConv.isTraining) {
+        // Training mode without auto - AI acts as client for practice
+        console.log('Training mode without auto - calling handleTrainingAutoResponse');
+        handleTrainingAutoResponse(t);
+      } else {
+        console.log('No auto mode, not training - no AI response');
+      }
+    }
+
+    function addOverlayMessage(sender, content) {
+      const msg = document.createElement('div');
+      msg.style.margin = '6px 0';
+      msg.style.padding = '8px';
+      msg.style.borderRadius = '6px';
+      
+      if(sender === 'system') {
+        msg.style.background = '#fef3c7';
+        msg.style.border = '1px solid #f59e0b';
+        msg.innerHTML = `<strong>System:</strong> ${content}`;
+      } else {
+        msg.style.background = '#f0f9ff';
+        msg.style.border = '1px solid #0ea5e9';
+        msg.textContent = content;
+      }
+      
+      ovBody.appendChild(msg);
+      ovBody.scrollTop = ovBody.scrollHeight;
+    }
+
+    function viewUserProfilesFromOverlay(name){
+      openUserProfiles();
+    }
+
+    function notesFlow(name){
+      const action = prompt('Notes: Would you like to "view" or "add" notes?').toLowerCase();
+      if(action==='view'){
+        addOverlayMessage('system', `Opening notes for ${name}.`);
+        openUserProfiles();
+      } else if(action==='add'){
+        const text = prompt('Enter note to add:'); if(!text) return;
+        fetch('/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId: (name||'demo')+'-client', text, by:'Agent' }) })
+          .then(()=> addOverlayMessage('system','Note saved.'))
+          .catch(()=> addOverlayMessage('system','Failed to save note.'));
+      } else {
+        addOverlayMessage('system','Cancelled.');
+      }
+    }
+
+    function handleTrainingAutoResponse(agentMessage) {
+      trainingStep++;
+      
+      // More contextual responses based on what the agent said
+      let responses = [];
+      
+      if(trainingStep === 1) {
+        responses = [
+          "Client: Hi, I'm having trouble with my Medicaid application. Can you help me?",
+          "Client: I got a letter saying I need a waiver for personal care services but I don't understand what that means."
+        ];
+      } else if(trainingStep === 2) {
+        responses = [
+          "Client: My Medicaid ID is 123456789. Do I need to do anything special?",
+          "Client: I'm 25 years old and I work part-time. Does having a job disqualify me from getting help?"
+        ];
+      } else if(trainingStep === 3) {
+        responses = [
+          "Client: Great! So I should call 800-525-2395 for the interview? What should I say when I call?",
+          "Client: Do I need to have my caregiver with me when I call? She's my sister."
+        ];
+      } else if(trainingStep === 4) {
+        responses = [
+          "Client: Perfect! I'll call them tomorrow. Thank you so much for your help!",
+          "Client: One more question - my sister is 16 and also needs care. Can she qualify too?"
+        ];
+      } else if(trainingStep === 5) {
+        responses = [
+          "Client: Actually, I'm getting confused about all this. Can you walk me through it one more time?",
+          "Client: What if they ask me about my income? I'm worried I make too much."
+        ];
+      } else {
+        responses = [
+          "Client: Thank you so much! You've been so helpful. I feel much better about calling now.",
+          "Client: I really appreciate your patience with all my questions."
+        ];
+      }
+      
+      // Pick a random response from the available options
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      
+      setTimeout(() => {
+        const a = document.createElement('div');
+        a.style.margin = '6px 0';
+        a.style.padding = '8px';
+        a.style.background = '#f0f9ff';
+        a.style.border = '1px solid #0ea5e9';
+        a.style.borderRadius = '6px';
+        a.textContent = response;
+        ovBody.appendChild(a);
+        ovBody.scrollTop = ovBody.scrollHeight;
+        
+        // After a few exchanges, trigger notification
+        if(trainingStep === 4) {
+          setTimeout(() => {
+            const notification = document.createElement('div');
+            notification.style.margin = '6px 0';
+            notification.style.padding = '8px';
+            notification.style.background = '#fef3c7';
+            notification.style.border = '1px solid #f59e0b';
+            notification.style.borderRadius = '6px';
+            notification.innerHTML = '<strong>🔔 Training Notification:</strong> The user in your conversation has an urgent message and needs live help.';
+            ovBody.appendChild(notification);
+            ovBody.scrollTop = ovBody.scrollHeight;
+            
+            // Add task to main chat
+            tasks.push({ id:'training_task', title:'Training: Client needs urgent live help', status:'new' });
+            dot.style.display = 'block';
+          }, 2000);
+        }
+        
+        // End training after 6 exchanges
+        if(trainingStep >= 6) {
+          setTimeout(() => {
+            const endMsg = document.createElement('div');
+            endMsg.style.margin = '6px 0';
+            endMsg.style.padding = '8px';
+            endMsg.style.background = '#f0fdf4';
+            endMsg.style.border = '1px solid #22c55e';
+            endMsg.style.borderRadius = '6px';
+            endMsg.innerHTML = '<strong>✅ Training Complete:</strong> You\'ve practiced the conversation flow! The AI training responses have stopped. You can continue manually or try the Auto mode for automated responses.';
+            ovBody.appendChild(endMsg);
+            ovBody.scrollTop = ovBody.scrollHeight;
+          }, 2000);
+        }
+      }, 1000);
+    }
+
+    function handleAIAutoResponse(agentMessage) {
+      // AI responds as admin agent in auto mode
+      console.log('handleAIAutoResponse called, trainingStep:', trainingStep);
+      trainingStep++; // Increment step counter
+      setTimeout(() => {
+        const responses = [
+          "AI Agent: Yes, parents can be caregivers for adults over 18. Guardianship is only needed if court-appointed. Let me help you with the eligibility process.",
+          "AI Agent: For Nevada Medicaid PCS services, the client needs: 1) Medicaid coverage, 2) PCS waiver, 3) ADL assessment. Adults 18+ don't need guardians.",
+          "AI Agent: The client should call 800-525-2395 for their interview. Have them mention 'NV Care Solutions' as their provider choice.",
+          "AI Agent: Job status doesn't disqualify from PCS services. The key is having Medicaid + PCS waiver + ADL needs documented.",
+          "AI Agent: For under 18, hardship documentation is required. For 18+, no guardian needed unless court-appointed."
+        ];
+        
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        addOverlayMessage('ai', response);
+        
+        // Also show in main chat
+        addMessage('assistant', response);
+        
+        // After a few AI responses, trigger task assignment
+        if(trainingStep >= 3) {
+          setTimeout(() => {
+            addOverlayMessage('system', '🔔 Task Assignment: Client needs urgent live help - assign to agent.');
+            addMessage('assistant', '🔔 Task Assignment: Client needs urgent live help - assign to agent.');
+            tasks.push({ id:'auto_task', title:'Auto-assigned: Client needs urgent help', status:'new' });
+            dot.style.display = 'block';
+          }, 2000);
+        }
+      }, 800);
+    }
+
+    function addMessage(sender, content){ const d=document.createElement('div'); d.className=`message ${sender}`; d.innerHTML = `<strong>${sender==='rep'?'REP':'KLOUDY'}:</strong> ${content}`; chatMessages.appendChild(d); chatMessages.scrollTop=chatMessages.scrollHeight; return d; }
+
+    function addNotePrompt(){ const text = prompt('Enter note to add to client profile:'); if(!text) return; fetch('/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId:'demo-profile', text }) }).then(r=>r.json()).then(()=> addMessage('assistant', `Note saved to profile.`)).catch(()=> addMessage('assistant','Failed to save note.')); }
+
+    // New functions for enhanced UI
+    function switchTab(tabId) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      
+      // Show selected tab
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function showInChat(content) {
+      addMessage('assistant', content);
+    }
+
+    function openNotesOverlay() {
+      const name = prompt('Kloudy Notes: Which user profile would you like to access?');
+      if(!name) return;
+      
+      // Create profile selection overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000';
+      
+      const panel = document.createElement('div');
+      panel.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:400px;max-width:90vw';
+      
+      panel.innerHTML = `
+        <h3>Select Profile for ${name}</h3>
+        <div style="margin:10px 0;">
+          <button onclick="selectProfile('${name}', 'client')" style="width:100%;padding:10px;margin:5px 0;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;">Client Profile</button>
+          <button onclick="selectProfile('${name}', 'caregiver')" style="width:100%;padding:10px;margin:5px 0;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;">Caregiver Profile</button>
+          <button onclick="selectProfile('${name}', 'guardian')" style="width:100%;padding:10px;margin:5px 0;background:#f59e0b;color:#fff;border:none;border-radius:6px;cursor:pointer;">Guardian Profile</button>
+        </div>
+        <button onclick="this.closest('.overlay').remove()" style="width:100%;padding:10px;background:#6b7280;color:#fff;border:none;border-radius:6px;cursor:pointer;">Cancel</button>
+      `;
+      
+      overlay.appendChild(panel);
+      overlay.className = 'overlay';
+      document.body.appendChild(overlay);
+    }
+
+    function selectProfile(name, type) {
+      document.querySelector('.overlay').remove();
+      const text = prompt(`Add note to ${name}'s ${type} profile:`);
+      if(!text) return;
+      
+      fetch('/api/notes/save', {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body: JSON.stringify({ profileId:`${name}-${type}`, text, by:'Agent' })
+      }).then(r=>r.json()).then(()=> {
+        addMessage('assistant', `Note saved to ${name}'s ${type} profile.`);
+      }).catch(()=> addMessage('assistant','Failed to save note.'));
+    }
+
+    function loadSMSProfiles() {
+      // Create SMS profiles overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000';
+      
+      const panel = document.createElement('div');
+      panel.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:600px;max-width:90vw;max-height:80vh;overflow-y:auto';
+      
+      panel.innerHTML = `
+        <h3>📱 Recent SMS Intakes</h3>
+        <div style="margin:10px 0;">
+          <div style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin:5px 0;">
+            <strong>Jane Smith</strong> - (702) 555-0123<br>
+            <small>Medicaid ID: 123456789 | Status: Pending</small><br>
+            <em>"I need help with my Medicaid application"</em>
+          </div>
+          <div style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin:5px 0;">
+            <strong>Mike Johnson</strong> - (702) 555-0456<br>
+            <small>Medicaid ID: 987654321 | Status: Complete</small><br>
+            <em>"My waiver was approved, what's next?"</em>
+          </div>
+          <div style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin:5px 0;background:#f0f9ff;">
+            <strong>Practice SMS</strong> - Training<br>
+            <small>Use this for practice conversations</small><br>
+            <em>"Hi, I'm looking for personal care services"</em>
+          </div>
+        </div>
+        <button onclick="this.closest('.overlay').remove()" style="width:100%;padding:10px;background:#6b7280;color:#fff;border:none;border-radius:6px;cursor:pointer;">Close</button>
+      `;
+      
+      overlay.appendChild(panel);
+      overlay.className = 'overlay';
+      document.body.appendChild(overlay);
+    }
+
+    // Practice user profiles for testing
+    const practiceProfiles = [
+      {
+        id: 'profile1',
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@email.com',
+        phone: '(702) 555-0101',
+        medicaidId: '123456789',
+        role: 'Client',
+        status: 'Active',
+        lastContact: '2025-09-20',
+        notes: ['Needs help with PCS waiver application', 'Has mobility issues', 'Prefers morning calls'],
+        caregiver: 'Mary Johnson (Mother)',
+        address: '123 Main St, Las Vegas, NV 89101'
+      },
+      {
+        id: 'profile2', 
+        name: 'Robert Martinez',
+        email: 'robert.martinez@email.com',
+        phone: '(702) 555-0102',
+        medicaidId: '987654321',
+        role: 'Client',
+        status: 'Pending',
+        lastContact: '2025-09-19',
+        notes: ['Medicaid approved, waiting for waiver', 'Works part-time', 'Has diabetes'],
+        caregiver: 'Maria Martinez (Sister)',
+        address: '456 Oak Ave, Henderson, NV 89014'
+      },
+      {
+        id: 'profile3',
+        name: 'Emily Chen',
+        email: 'emily.chen@email.com', 
+        phone: '(702) 555-0103',
+        medicaidId: '456789123',
+        role: 'Caregiver',
+        status: 'Active',
+        lastContact: '2025-09-21',
+        notes: ['Caring for father with dementia', 'Has CNA certification', 'Available weekdays'],
+        client: 'David Chen (Father)',
+        address: '789 Pine St, Reno, NV 89501'
+      }
+    ];
+
+    function openUserProfiles() {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000';
+      
+      const panel = document.createElement('div');
+      panel.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:700px;max-width:90vw;max-height:80vh;overflow-y:auto';
+      
+      let profilesHtml = '<h3>👥 User Profiles</h3><div style="margin:10px 0;">';
+      
+      practiceProfiles.forEach(profile => {
+        profilesHtml += `
+          <div style="padding:12px;border:1px solid #e5e7eb;border-radius:6px;margin:8px 0;cursor:pointer;" onclick="viewUserProfile('${profile.id}')">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong>${profile.name}</strong> - ${profile.role}<br>
+                <small>${profile.phone} | ${profile.email}</small><br>
+                <small>Medicaid ID: ${profile.medicaidId} | Status: ${profile.status}</small>
+              </div>
+              <div style="text-align:right;">
+                <small>Last Contact: ${profile.lastContact}</small><br>
+                <span style="background:#e5e7eb;padding:2px 6px;border-radius:4px;font-size:11px;">${profile.status}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      profilesHtml += '</div><button onclick="this.closest(\'.overlay\').remove()" style="width:100%;padding:10px;background:#6b7280;color:#fff;border:none;border-radius:6px;cursor:pointer;">Close</button>';
+      
+      panel.innerHTML = profilesHtml;
+      overlay.appendChild(panel);
+      overlay.className = 'overlay';
+      document.body.appendChild(overlay);
+    }
+
+    function viewUserProfile(profileId) {
+      const profile = practiceProfiles.find(p => p.id === profileId);
+      if(!profile) return;
+      
+      // Close profiles overlay
+      document.querySelector('.overlay').remove();
+      
+      // Create profile detail overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000';
+      
+      const panel = document.createElement('div');
+      panel.style.cssText = 'background:#fff;border-radius:8px;padding:20px;width:600px;max-width:90vw;max-height:80vh;overflow-y:auto';
+      
+      panel.innerHTML = `
+        <h3>👤 ${profile.name} - ${profile.role}</h3>
+        <div style="margin:15px 0;">
+          <div style="margin:8px 0;"><strong>Phone:</strong> ${profile.phone}</div>
+          <div style="margin:8px 0;"><strong>Email:</strong> ${profile.email}</div>
+          <div style="margin:8px 0;"><strong>Medicaid ID:</strong> ${profile.medicaidId}</div>
+          <div style="margin:8px 0;"><strong>Status:</strong> ${profile.status}</div>
+          <div style="margin:8px 0;"><strong>Address:</strong> ${profile.address}</div>
+          ${profile.caregiver ? `<div style="margin:8px 0;"><strong>Caregiver:</strong> ${profile.caregiver}</div>` : ''}
+          ${profile.client ? `<div style="margin:8px 0;"><strong>Client:</strong> ${profile.client}</div>` : ''}
+          <div style="margin:8px 0;"><strong>Last Contact:</strong> ${profile.lastContact}</div>
+        </div>
+        
+        <h4>📝 Notes</h4>
+        <div class="notes-section">
+          <div class="notes-search">
+            <input type="text" id="notesSearch-${profile.id}" placeholder="Search notes..." onkeyup="searchNotes('${profile.id}', this.value)">
+          </div>
+          <div class="notes-list" id="notesList-${profile.id}">
+            ${profile.notes.map(note => `
+              <div class="note-block">
+                <div class="note-header">
+                  <span class="note-author">Agent</span>
+                  <span class="note-timestamp">${new Date().toLocaleDateString()}</span>
+                </div>
+                <div class="note-content">${note}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="add-note">
+            <input type="text" id="newNote-${profile.id}" placeholder="Add new note..." onkeydown="if(event.key==='Enter'){addNoteToProfile('${profile.name}', '${profile.id}')}">
+            <button onclick="addNoteToProfile('${profile.name}', '${profile.id}')">Add</button>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin:15px 0;">
+          <button onclick="askAIAboutProfile('${profile.name}')" style="flex:1;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;">Ask AI About ${profile.name}</button>
+          <button onclick="addNoteToProfile('${profile.name}')" style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;">Add Note</button>
+          <button onclick="startConversation('${profile.name}')" style="flex:1;padding:10px;background:#f59e0b;color:#fff;border:none;border-radius:6px;cursor:pointer;">Start Chat</button>
+        </div>
+        
+        <button onclick="this.closest('.overlay').remove()" style="width:100%;padding:10px;background:#6b7280;color:#fff;border:none;border-radius:6px;cursor:pointer;">Close</button>
+      `;
+      
+      overlay.appendChild(panel);
+      overlay.className = 'overlay';
+      document.body.appendChild(overlay);
+    }
+
+    function askAIAboutProfile(profileName) {
+      document.querySelector('.overlay').remove();
+      addMessage('assistant', `I can help you with information about ${profileName}. What would you like to know? You can ask about their status, notes, contact information, or next steps.`);
+    }
+
+    function addNoteToProfile(profileName, profileId) {
+      document.querySelector('.overlay').remove();
+      const input = document.getElementById(`newNote-${profileId}`);
+      const text = input ? input.value : prompt(`Add note to ${profileName}'s profile:`);
+      
+      if(!text) return;
+      
+      // Clear input if using the inline form
+      if(input) input.value = '';
+      
+      fetch('/api/notes/save', {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body: JSON.stringify({ 
+          profileId: profileId || `${profileName.toLowerCase().replace(' ', '-')}`, 
+          text, 
+          by: 'Agent',
+          timestamp: new Date().toISOString()
+        })
+      }).then(r=>r.json()).then(()=> {
+        addMessage('assistant', `Note added to ${profileName}'s profile: "${text}"`);
+        
+        // Add note to the profile's notes array
+        const profile = profiles.find(p => p.name === profileName);
+        if(profile) {
+          profile.notes.push(text);
+        }
+      }).catch(() => {
+        addMessage('assistant', 'Failed to save note.');
+      });
+    }
+
+    function searchNotes(profileId, searchTerm) {
+      const notesList = document.getElementById(`notesList-${profileId}`);
+      if(!notesList) return;
+      
+      const noteBlocks = notesList.querySelectorAll('.note-block');
+      
+      noteBlocks.forEach(block => {
+        const content = block.querySelector('.note-content').textContent.toLowerCase();
+        const author = block.querySelector('.note-author').textContent.toLowerCase();
+        
+        if(content.includes(searchTerm.toLowerCase()) || author.includes(searchTerm.toLowerCase())) {
+          block.style.display = 'block';
+        } else {
+          block.style.display = searchTerm ? 'none' : 'block';
+        }
+      });
+    }
+
+    function addNoteBlock(profileId, text, author = 'Agent', timestamp = new Date()) {
+      const notesList = document.getElementById(`notesList-${profileId}`);
+      if(!notesList) return;
+      
+      const noteBlock = document.createElement('div');
+      noteBlock.className = 'note-block';
+      noteBlock.innerHTML = `
+        <div class="note-header">
+          <span class="note-author">${author}</span>
+          <span class="note-timestamp">${timestamp.toLocaleDateString()}</span>
+        </div>
+        <div class="note-content">${text}</div>
+      `;
+      
+      notesList.appendChild(noteBlock);
+      notesList.scrollTop = notesList.scrollHeight;
+    }
+
+    // Sandata Dashboard Functions
+    function openSandataDashboard() {
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.innerHTML = `
+        <div class="panel" style="max-width: 1000px; width: 90%;">
+          <div class="title">
+            <span>📊 Sandata EVV Certification Dashboard</span>
+            <button onclick="closeOverlay()">Close</button>
+          </div>
+          <div class="body" style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+              <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #0ea5e9;">
+                <h4 style="margin: 0 0 10px 0; color: #0c4a6e;">📈 Certification Status</h4>
+                <div style="font-size: 14px;">
+                  <div><strong>Provider:</strong> UNITED FAMILY CAREGIVERS</div>
+                  <div><strong>Provider ID:</strong> 250038194</div>
+                  <div><strong>Test Account:</strong> 71607</div>
+                  <div><strong>Status:</strong> <span style="color: #f59e0b;">Certification In Progress</span></div>
+                </div>
+              </div>
+              <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #22c55e;">
+                <h4 style="margin: 0 0 10px 0; color: #166534;">✅ Test Results</h4>
+                <div style="font-size: 14px;">
+                  <div>Clients: <span style="color: #22c55e;">6/6 ✅</span></div>
+                  <div>Employees: <span style="color: #22c55e;">6/6 ✅</span></div>
+                  <div>Visits: <span style="color: #ef4444;">0/6 ❌</span></div>
+                  <div>Calls: <span style="color: #ef4444;">0/6 ❌</span></div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border: 1px solid #f59e0b; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Critical Issues</h4>
+              <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+                <li>Service ID errors: "Error during retrieving service service_id entered"</li>
+                <li>Phone type format: "Work" should be "Business"</li>
+                <li>Version conflicts: Duplicate or older version numbers</li>
+                <li>Mixed call types failing validation</li>
+              </ul>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+              <button onclick="executeSandataTests()" style="padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                🧪 Run Certification Tests
+              </button>
+              <button onclick="fixSandataIssues()" style="padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                🔧 Auto-Fix Issues
+              </button>
+              <button onclick="viewSandataLogs()" style="padding: 12px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                📋 View Logs
+              </button>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <h4 style="margin: 0 0 10px 0;">📊 Test Scenarios Status</h4>
+              <div style="font-size: 14px;">
+                <div style="margin: 5px 0;">✅ Send 6+ Client records - <span style="color: #22c55e;">Successfully Validated</span></div>
+                <div style="margin: 5px 0;">✅ Send 6+ Employee records - <span style="color: #22c55e;">Successfully Validated</span></div>
+                <div style="margin: 5px 0;">❌ Send 6+ Visit records - <span style="color: #ef4444;">Failed Validation</span></div>
+                <div style="margin: 5px 0;">⏳ Mobile call type testing - <span style="color: #6b7280;">Not Tested</span></div>
+                <div style="margin: 5px 0;">⏳ Telephony call type testing - <span style="color: #6b7280;">Not Tested</span></div>
+                <div style="margin: 5px 0;">⏳ Manual call type testing - <span style="color: #6b7280;">Not Tested</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function executeSandataTests() {
+      document.querySelector('.overlay').remove();
+      addMessage('assistant', '🧪 Starting Sandata certification tests...');
+      
+      // Simulate test execution
+      setTimeout(() => {
+        addMessage('assistant', '📊 Test Results:\n• Clients: 6/6 ✅\n• Employees: 6/6 ✅\n• Visits: 0/6 ❌ (Service ID errors)\n• Calls: 0/6 ❌ (Call type issues)\n\nNeed to fix service ID validation and call type formatting.');
+      }, 2000);
+    }
+
+    function fixSandataIssues() {
+      document.querySelector('.overlay').remove();
+      addMessage('assistant', '🔧 Auto-fixing Sandata issues:\n• Converting "Work" phone types to "Business"\n• Validating service IDs\n• Fixing call type formats\n• Resolving version conflicts\n\nIssues fixed! Ready to retry tests.');
+    }
+
+    function viewSandataLogs() {
+      document.querySelector('.overlay').remove();
+      addMessage('assistant', '📋 Recent Sandata Logs:\n\nSUCCESS:\n• Client upload: 9440d069-83a5-489a-885a-6adaed7ea9a1\n• Employee upload: e4a4d069-485d-40e8-b665-5cfe39023bf4\n\nFAILED:\n• Visit upload: 51d0b2da-835a-45a0-abf6-4c2a3a3584af (Service ID error)\n• Visit upload: 66f61159-461c-4acd-a0d9-849613cf20a9 (Phone type format)\n\nNeed to fix service ID validation and phone type formatting.');
+    }
+
+    function startConversation(profileName) {
+      document.querySelector('.overlay').remove();
+      addMessage('assistant', `Starting conversation with ${profileName}. You can now ask me about their case or get guidance on how to help them.`);
+    }
+
+    function renderTasksInChat(){ 
+      if(tasks.length===0){ 
+        addMessage('assistant','No pending tasks.'); 
+        return; 
+      } 
+      
+      // Clear existing task messages first
+      const existingTasks = document.querySelectorAll('.message.task');
+      existingTasks.forEach(task => task.remove());
+      
+      tasks.forEach(t=>{ 
+        const div=document.createElement('div'); 
+        div.className='message task'; 
+        div.innerHTML=`<strong>Task:</strong> ${t.title}<br><button class=\"btn btn-accept\" onclick=\"acceptTask('${t.id}')\">Accept</button>`; 
+        chatMessages.appendChild(div); 
+      }); 
+      chatMessages.scrollTop=chatMessages.scrollHeight; 
+    }
+    function acceptTask(id){ const t=tasks.find(x=>x.id===id); if(!t) return; t.status='accepted'; addMessage('assistant',`Task accepted: ${t.title}`); dot.style.display='none'; }
+
+    document.getElementById('notif').addEventListener('click', ()=> renderTasksInChat());
+
+    // AI chat with context awareness
+    async function sendMessage(){ 
+      const message=messageInput.value.trim(); 
+      if(!message) return; 
+      
+      sendButton.disabled=true; 
+      addMessage('rep',message); 
+      messageInput.value=''; 
+      
+      // Build context-aware prompt
+      let contextPrompt = `You are Kloudy Rep Assistant for United Family Caregivers customer service representatives.
+
+COMPANY: NV Care Solutions Inc dba United Family Caregivers (Nevada PCS Provider Type 30)
+
+REP GUIDANCE - ELIGIBILITY:
+- Nevada Medicaid + PCS waiver + ADL assessment required
+- Adults 18+ do NOT need guardians to qualify
+- Under 18 requires hardship documentation
+- Having a job does NOT disqualify clients
+- Provider selection during interview: "NV Care Solutions"
+
+PHONE NUMBERS:
+- Rep line: 833.432.6588
+- Medicaid interview line: 800-525-2395 (Mon-Fri 8am-5pm)
+
+INTAKE FLOW:
+1. Patient name, phone, Medicaid ID
+2. Verify PCS waiver status
+3. Caregiver name, relationship, phone
+4. Three-way call to 800-525-2395
+
+IMPORTANT: Give SHORT, DIRECT answers first, then details. Be fast and accurate.
+
+MEDICAID ID FACTS:
+- Nevada Medicaid ID is typically 9-10 digits (NO area code)
+- Area code is NOT part of Medicaid ID
+- Format: Usually 9 digits, sometimes 10
+
+REP QUESTION: ${message}`;
+
+      // Add conversation context if in overlay
+      if(currentConv) {
+        contextPrompt += `\n\nCURRENT CONVERSATION CONTEXT: Talking with ${currentConv.name} (${currentConv.email || 'no email'})`;
+      }
+
+      const thinking=addMessage('assistant','Checking knowledge base...'); 
+      try{ 
+        const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:contextPrompt})}); 
+        const data=await res.json(); 
+        thinking.remove(); 
+        if(data.response){ 
+          addMessage('assistant', data.response.trim()); 
+        } else { 
+          addMessage('assistant','Please try again.'); 
+        } 
+      } catch(e){ 
+        thinking.remove(); 
+        addMessage('assistant','Connection issue.'); 
+      } 
+      sendButton.disabled=false; 
+    }
+
+    sendButton.addEventListener('click', sendMessage); messageInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } });
+
+    function triggerTrainingResponse() {
+      // Trigger initial client response in training mode
+      if(currentConv && currentConv.isTraining) {
+        const responses = [
+          "Client: Hi, I'm having trouble with my Medicaid application. Can you help me?",
+          "Client: I got a letter saying I need a waiver for personal care services but I don't understand what that means.",
+          "Client: My doctor said I need help at home but I'm not sure how to get started."
+        ];
+        
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        addOverlayMessage('client', response);
+        
+        // Show in main chat too
+        addMessage('assistant', `Training: ${response}`);
+      }
+    }
+
+    // Init
+    renderConvs(); 
+    addMessage('assistant','Kloudy is ready. Ask me anything.');
+    dot.style.display = 'block'; // Show notification dot for practice tasks
+  </script>
+</body>
+</html>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kloudy User App</title>
+  <link rel="icon" type="image/png" href="/KloudyAiChatFavicon.png">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; background:#fff; }
+    .header { background:#111827; color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; }
+    .spacer { flex:1; }
+    .main { display:flex; gap:12px; padding:12px; height:calc(100vh - 80px); }
+    .left { width:280px; border:1px solid #e5e7eb; border-radius:8px; padding:12px; overflow:auto; }
+    .panel { flex:2; border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fafafa; display:flex; flex-direction:column; }
+    .right { width:300px; border:1px solid #e5e7eb; border-radius:8px; padding:12px; overflow:auto; }
+    .row { display:flex; gap:8px; margin-bottom:8px; }
+    input, select { flex:1; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; }
+    button { padding:10px 14px; background:#2563eb; color:#fff; border:none; border-radius:6px; cursor:pointer; }
+    .chat { flex:1; overflow:auto; background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:10px; margin-top:10px; min-height:400px; }
+    .msg { margin:8px 0; padding:8px; border-radius:8px; max-width:80%; }
+    .user { background:#2563eb; color:#fff; margin-left:auto; }
+    .ai { background:#fff; border:1px solid #e5e7eb; }
+    .notify { position:relative; }
+    .bell { width:22px; height:22px; filter: grayscale(100%); }
+    .dot { position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ef4444; border-radius:50%; display:none; }
+    .conv { padding:8px; border:1px solid #e5e7eb; border-radius:6px; background:#fff; margin-bottom:8px; cursor:pointer; }
+    .conv.active { border-color:#2563eb; }
+    .center { max-width:560px; margin:0 auto; }
+    .training-section { margin-bottom:16px; }
+    .training-item { padding:8px; border:1px solid #e5e7eb; border-radius:6px; background:#fff; margin-bottom:8px; cursor:pointer; }
+    .doc-item { padding:8px; border:1px solid #e5e7eb; border-radius:6px; background:#fff; margin-bottom:8px; cursor:pointer; }
+    
+    /* Mobile optimization */
+    @media (max-width: 768px) {
+      .main { flex-direction:column; height:auto; }
+      .left, .right { width:100%; margin-bottom:12px; }
+      .header { flex-wrap:wrap; }
+      .header button { font-size:10px; padding:4px 8px; }
+      .chat { min-height:300px; }
+    }
+  </style>
+  <script>
+    let profile = { role: 'client', stage: 'registration', fields: {} };
+    let tasks = [];
+    let eligibilityData = null;
+    function $(id){ return document.getElementById(id); }
+
+    function showDot(show){ $("dot").style.display = show ? 'block' : 'none'; }
+    function logout(){ fetch('/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='/login.html'; }); }
+    function goLogin(){ window.location.href = '/login.html'; }
+    function setAuthButton(mode){
+      const btn = $("authBtn");
+      if(!btn) return;
+      if(mode === 'logout'){
+        btn.textContent = 'Logout';
+        btn.onclick = logout;
+      } else {
+        btn.textContent = 'Login';
+        btn.onclick = goLogin;
+      }
+    }
+
+    // Client conversations with detailed contact info - newest first
+    const clientConversations = [
+      { id:'service_hours', name:'Service Hours Update', contact:'Scheduling Team', phone:'(555) 456-7890', email:'scheduling@kloudy.ai', tags:['scheduling'], preview:'Your approved service hours', messages:['Scheduler: Your service hours have been updated.'], isTraining: false, timestamp: Date.now() - 1000 },
+      { id:'caregiver_assignment', name:'Caregiver Assignment', contact:'Care Coordinator', phone:'(555) 345-6789', email:'care@kloudy.ai', tags:['caregiver'], preview:'Information about your assigned caregiver', messages:['Coordinator: Your caregiver has been assigned.'], isTraining: false, timestamp: Date.now() - 2000 },
+      { id:'medicaid_questions', name:'Medicaid Questions', contact:'Benefits Specialist', phone:'(555) 567-8901', email:'benefits@kloudy.ai', tags:['benefits'], preview:'Questions about your Medicaid benefits', messages:['Specialist: I can help with your Medicaid questions.'], isTraining: true, timestamp: Date.now() - 3000 },
+      { id:'appointment_scheduling', name:'Appointment Scheduling', contact:'Scheduling Team', phone:'(555) 456-7890', email:'scheduling@kloudy.ai', tags:['scheduling'], preview:'Schedule or reschedule appointments', messages:['Scheduler: Ready to help with scheduling.'], isTraining: true, timestamp: Date.now() - 4000 },
+      { id:'welcome_user', name:'Welcome to Kloudy', contact:'Support Team', phone:'(555) 123-4567', email:'support@kloudy.ai', tags:['general','new'], preview:'Welcome! Learn how to use Kloudy...', messages:['System: Welcome to Kloudy!', 'This is your client portal.'], isTraining: true, timestamp: Date.now() - 5000 }
+    ];
+
+    async function register(){
+      if(!document.getElementById('legal').checked){ alert('Please agree to legal terms.'); return; }
+      const role = $("role").value;
+      const fullName = $("fullName").value.trim();
+      const phone = $("phone").value.trim();
+      const email = $("email").value.trim();
+      const password = $("password").value.trim();
+      const confirmPassword = $("confirmPassword").value.trim();
+      const relation = $("relation").value.trim();
+      const clientName = $("clientName").value.trim();
+      const dob = $("dob").value;
+      const medicaid = $("medicaid").value.trim();
+
+      if(!password || password !== confirmPassword){
+        alert('Passwords do not match or are empty.');
+        return;
+      }
+
+      profile = { role, stage:'chat', fields:{ fullName, phone, email, relation, clientName, dob, medicaid } };
+      $("reg").style.display='none';
+      $("chat").style.display='block';
+      $("left").style.display='block';
+      $("right").style.display='block';
+      setAuthButton('logout');
+      addConv('You', 'Registration started');
+      add('ai', 'Thanks! Your profile is created. I can answer questions about your Medicaid benefits, eligibility, and services.');
+
+      if (clientName && dob && medicaid){
+        try { await fetch('/api/voice/auto-trigger', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientName, dob, medicaid }) }); } catch(e) {}
+        // Simulate Twilio call data collection for eligibility
+        setTimeout(() => {
+          eligibilityData = {
+            hasMCO: Math.random() > 0.5, // Random for demo
+            isFeeForService: Math.random() > 0.3,
+            mcoProvider: Math.random() > 0.5 ? 'Anthem Blue Cross Blue Shield' : 'UnitedHealthcare',
+            lastUpdated: new Date().toLocaleDateString()
+          };
+          addClientTask('Review your eligibility information', 'eligibility');
+        }, 5000);
+      }
+    }
+
+    async function send(){
+      const msg = $("input").value.trim(); if(!msg) return;
+      add('user', msg); $("input").value='';
+      
+      // Check for pay rate questions and provide appropriate response
+      if (msg.toLowerCase().includes('pay') || msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('$') || msg.toLowerCase().includes('money') || msg.toLowerCase().includes('cost')) {
+        add('ai', 'Pay rates vary based on your specific case and services needed. If you\'d like detailed information about rates, I can connect you with a live representative who can provide personalized assistance. Would you like me to arrange that for you?');
+        return;
+      }
+      
+      const rolePrompt = 'You are Kloudy Client Assistant, helping clients with their Medicaid benefits, eligibility questions, and service information. Be helpful, friendly, and HIPAA-compliant.';
+      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: rolePrompt + "\nClient: " + msg }) });
+      const j = await r.json(); add('ai', (j.response||'...'));
+    }
+
+    function add(who, text){ const d=document.createElement('div'); d.className='msg '+(who==='user'?'user':'ai'); d.textContent=text; $("messages").appendChild(d); $("messages").scrollTop = $("messages").scrollHeight; }
+    function addConv(who, text){ const c=document.createElement('div'); c.className='conv'; c.textContent=`${who}: ${text}`; $("convs").prepend(c); }
+
+    function showEligibility(){
+      if(!eligibilityData){
+        add('ai', 'Eligibility information is not yet available. This data will be populated after your Twilio call verification process.');
+        return;
+      }
+      
+      const div = document.createElement('div');
+      div.className = 'msg ai';
+      div.innerHTML = `
+        <strong>📋 Eligibility Information</strong><br>
+        <strong>MCO Status:</strong> ${eligibilityData.hasMCO ? 'Yes' : 'No'}<br>
+        <strong>Fee-for-Service:</strong> ${eligibilityData.isFeeForService ? 'Yes' : 'No'}<br>
+        ${eligibilityData.hasMCO ? `<strong>MCO Provider:</strong> ${eligibilityData.mcoProvider}<br>` : ''}
+        <strong>Last Updated:</strong> ${eligibilityData.lastUpdated || 'Not available'}
+      `;
+      $("messages").appendChild(div);
+      $("messages").scrollTop = $("messages").scrollHeight;
+    }
+
+    function showQuickReferences(){
+      const role = profile.role || 'client';
+      let references = '';
+      
+      if(role === 'client'){
+        references = `
+          <strong>📚 Quick References - Client</strong><br>
+          • <strong>Medicaid Benefits:</strong> Check your current benefits<br>
+          • <strong>Service Hours:</strong> View your approved service hours<br>
+          • <strong>Caregiver Info:</strong> Information about your assigned caregiver<br>
+          • <strong>Appointment Scheduling:</strong> Schedule or reschedule appointments<br>
+          • <strong>Document Upload:</strong> Submit required documents<br>
+          • <strong>Emergency Contact:</strong> Update emergency contact information<br>
+          • <strong>Service Changes:</strong> Request changes to your care plan
+        `;
+      } else if(role === 'caregiver'){
+        references = `
+          <strong>📚 Quick References - Caregiver</strong><br>
+          • <strong>Client Schedule:</strong> View your assigned client schedule<br>
+          • <strong>Time Tracking:</strong> Log your service hours<br>
+          • <strong>Client Notes:</strong> Update client care notes<br>
+          • <strong>Training Materials:</strong> Access caregiver training<br>
+          • <strong>Payroll Info:</strong> View your payroll information<br>
+          • <strong>Support Resources:</strong> Get caregiver support<br>
+          • <strong>Emergency Procedures:</strong> Emergency contact protocols
+        `;
+      } else if(role === 'guardian'){
+        references = `
+          <strong>📚 Quick References - Guardian</strong><br>
+          • <strong>Client Status:</strong> Check client's current status<br>
+          • <strong>Service Authorization:</strong> Manage service approvals<br>
+          • <strong>Financial Information:</strong> View billing and payments<br>
+          • <strong>Care Plan Updates:</strong> Request care plan changes<br>
+          • <strong>Document Management:</strong> Submit required documents<br>
+          • <strong>Communication:</strong> Contact care team<br>
+          • <strong>Legal Documents:</strong> Access legal forms
+        `;
+      }
+      
+      const div = document.createElement('div');
+      div.className = 'msg ai';
+      div.innerHTML = references;
+      $("messages").appendChild(div);
+      $("messages").scrollTop = $("messages").scrollHeight;
+    }
+
+    function renderUserTrainingConvs(){
+      const convsDiv = $("convs");
+      convsDiv.innerHTML = '';
+      // Sort by timestamp (newest first)
+      const sortedConvs = [...clientConversations].sort((a, b) => b.timestamp - a.timestamp);
+      
+      sortedConvs.forEach(c => {
+        const d = document.createElement('div');
+        d.className = 'conv';
+        d.innerHTML = `
+          <div style="font-weight:600;">${c.name}</div>
+          <div style="font-size:11px;color:#666;margin:2px 0;">Contact: ${c.contact}</div>
+          <div style="font-size:11px;color:#666;">📞 ${c.phone} | ✉️ ${c.email}</div>
+          <div style="font-size:12px;color:#666;margin-top:4px;">${c.preview}</div>
+          <div style="margin-top:4px;">
+            <button onclick="openClientConversation('${c.id}')" style="padding:4px 8px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:10px; margin-right:4px;">💬 Chat</button>
+            <button onclick="speakConversation('${c.id}')" style="padding:4px 8px; background:#059669; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:10px;">🔊 Speak</button>
+          </div>
+        `;
+        convsDiv.appendChild(d);
+      });
+    }
+
+    function openClientConversation(convId){
+      const conv = clientConversations.find(c => c.id === convId);
+      if(!conv) return;
+      
+      if(convId === 'welcome_user'){
+        add('ai', '🤖 Welcome to your Kloudy client portal! I\'m here to help you with your Medicaid benefits, eligibility questions, and service information.');
+        add('ai', 'You can ask me about your eligibility status, service hours, caregiver information, or any other questions about your care.');
+      } else if(convId === 'caregiver_assignment'){
+        add('ai', '👥 Caregiver Assignment: Your assigned caregiver information will be available here once your case is processed.');
+        add('ai', 'You can contact the Care Coordinator at (555) 345-6789 or care@kloudy.ai for more information.');
+      } else if(convId === 'service_hours'){
+        add('ai', '⏰ Service Hours: Your approved service hours will be displayed here once your care plan is finalized.');
+        add('ai', 'Contact the Scheduling Team at (555) 456-7890 or scheduling@kloudy.ai for scheduling questions.');
+      } else if(convId === 'medicaid_questions'){
+        add('ai', '🏥 Medicaid Questions: I can help you understand your Medicaid benefits and coverage.');
+        add('ai', 'You can contact the Benefits Specialist at (555) 567-8901 or benefits@kloudy.ai for detailed information.');
+      } else if(convId === 'appointment_scheduling'){
+        add('ai', '📅 Appointment Scheduling: I can help you schedule or reschedule appointments.');
+        add('ai', 'Contact the Scheduling Team at (555) 456-7890 or scheduling@kloudy.ai for assistance.');
+      }
+    }
+
+    function speakConversation(convId){
+      const conv = clientConversations.find(c => c.id === convId);
+      if(!conv) return;
+      
+      const text = `${conv.name}. ${conv.preview}. Contact ${conv.contact} at ${conv.phone}`;
+      
+      if('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        speechSynthesis.speak(utterance);
+        add('ai', `🔊 Speaking: ${conv.name}`);
+      } else {
+        add('ai', '🔊 Text-to-speech not available in this browser.');
+      }
+    }
+
+    function showRespiteRequest(){
+      add('ai', '🏠 Respite Request: This feature is coming soon! You\'ll be able to request respite care services directly through this portal.');
+      add('ai', 'For now, please contact our scheduling team at (555) 456-7890 or scheduling@kloudy.ai to request respite services.');
+    }
+
+    function openTraining(trainingId){
+      const trainings = {
+        'medicaid_basics': '🏥 Medicaid Basics: Learn about your Medicaid benefits, coverage, and how to use them effectively.',
+        'caregiver_training': '👥 Caregiver Training: Essential skills for providing quality care to your loved ones.',
+        'safety_protocols': '🛡️ Safety Protocols: Important safety procedures and emergency protocols for home care.'
+      };
+      
+      add('ai', trainings[trainingId] || 'Training material not available.');
+      add('ai', 'This training content will be available in the full version of the portal.');
+    }
+
+    function openDocument(docId){
+      const documents = {
+        'consent_forms': '📋 Consent Forms: Required consent forms for services and treatments.',
+        'care_plan': '📋 Care Plan: Your personalized care plan with specific goals and services.',
+        'billing_info': '💰 Billing Information: Payment details, insurance information, and billing statements.',
+        'emergency_contacts': '🚨 Emergency Contacts: Important phone numbers and emergency procedures.'
+      };
+      
+      add('ai', documents[docId] || 'Document not available.');
+      add('ai', 'You can download or view these documents in the full version of the portal.');
+    }
+
+    function acceptTask(taskId){
+      const task = tasks.find(t => t.id === taskId);
+      if(task){
+        add('ai', `✅ Task accepted: ${task.title}`);
+        showDot(false);
+        tasks = tasks.filter(t => t.id !== taskId);
+      }
+    }
+
+    function showTasks(){
+      if(tasks.length === 0){
+        add('ai', 'No pending tasks.');
+        return;
+      }
+      tasks.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'msg ai';
+        div.innerHTML = `<strong>📋 Task:</strong> ${t.title}<br><button onclick="acceptTask('${t.id}')" style="margin-top:6px; padding:6px 10px; background:#16a34a; color:#fff; border:none; border-radius:4px; cursor:pointer;">Accept</button>`;
+        $("messages").appendChild(div);
+        $("messages").scrollTop = $("messages").scrollHeight;
+      });
+    }
+
+    // Client-specific tasks
+    function addClientTask(title, type = 'general'){
+      const taskId = 'task_' + Date.now();
+      tasks.push({ id: taskId, title, type, status: 'new' });
+      showDot(true);
+      add('ai', `🔔 New Task: ${title}`);
+    }
+
+    window.addEventListener('load', ()=>{ 
+      if(location.hash==='#register'){ 
+        $("reg").style.display='block'; 
+        $("chat").style.display='none'; 
+        setAuthButton('login');
+      } else {
+        setAuthButton('logout');
+        renderUserTrainingConvs();
+        // Add some initial client tasks for demonstration
+        setTimeout(() => {
+          addClientTask('Complete your profile verification', 'verification');
+          addClientTask('Review your service plan', 'review');
+        }, 2000);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="header">
+    <img src="/KloudyAiChatFavicon.png" style="width:24px; height:24px; margin-right:8px;" alt="Kloudy Logo"/>
+    <strong>Kloudy Client Portal</strong>
+    <div class="spacer"></div>
+    <button onclick="showQuickReferences()" style="margin-right:8px; padding:6px 12px; background:#7c3aed; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">📚 Quick Ref</button>
+    <button onclick="showRespiteRequest()" style="margin-right:8px; padding:6px 12px; background:#dc2626; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">🏠 Respite (Coming Soon)</button>
+    <div class="notify" onclick="showTasks()"><img class="bell" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='gray'><path d='M12 2a7 7 0 0 0-7 7v3.586l-1.707 1.707A1 1 0 0 0 4 16h16a1 1 0 0 0 .707-1.707L19 12.586V9a7 7 0 0 0-7-7zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3z'/></svg>"/><span id="dot" class="dot"></span></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="main">
+    <div id="left" class="left" style="display:none;">
+      <h4>Conversations</h4>
+      <div id="convs"></div>
+    </div>
+
+    <div class="panel" id="chat" style="display:none;">
+      <div id="messages" class="chat"></div>
+      <div class="row">
+        <input id="input" placeholder="Ask Kloudy..." onkeydown="if(event.key==='Enter'){event.preventDefault();send();}"/>
+        <button onclick="send()">Send</button>
+      </div>
+    </div>
+
+    <div id="right" class="right" style="display:none;">
+      <h4>📚 Training Center</h4>
+      <div class="training-section">
+        <div class="training-item" onclick="openTraining('medicaid_basics')">
+          <strong>Medicaid Basics</strong><br>
+          <small>Understanding your benefits</small>
+        </div>
+        <div class="training-item" onclick="openTraining('caregiver_training')">
+          <strong>Caregiver Training</strong><br>
+          <small>Essential care skills</small>
+        </div>
+        <div class="training-item" onclick="openTraining('safety_protocols')">
+          <strong>Safety Protocols</strong><br>
+          <small>Emergency procedures</small>
+        </div>
+      </div>
+      
+      <h4>📄 Documents</h4>
+      <div class="training-section">
+        <div class="doc-item" onclick="openDocument('consent_forms')">
+          <strong>Consent Forms</strong><br>
+          <small>Required signatures</small>
+        </div>
+        <div class="doc-item" onclick="openDocument('care_plan')">
+          <strong>Care Plan</strong><br>
+          <small>Your personalized plan</small>
+        </div>
+        <div class="doc-item" onclick="openDocument('billing_info')">
+          <strong>Billing Information</strong><br>
+          <small>Payment details</small>
+        </div>
+        <div class="doc-item" onclick="openDocument('emergency_contacts')">
+          <strong>Emergency Contacts</strong><br>
+          <small>Important phone numbers</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel center" id="reg">
+      <h3>Quick Registration</h3>
+      <div class="row">
+        <select id="role">
+          <option value="client">Client</option>
+          <option value="caregiver">Caregiver</option>
+          <option value="guardian">Guardian</option>
+        </select>
+        <input id="fullName" placeholder="Your full name"/>
+      </div>
+      <div class="row">
+        <input id="phone" placeholder="Phone"/>
+        <input id="email" placeholder="Email"/>
+      </div>
+      <div class="row">
+        <input id="password" type="password" placeholder="Create Password"/>
+        <input id="confirmPassword" type="password" placeholder="Confirm Password"/>
+      </div>
+      <div class="row">
+        <input id="relation" placeholder="Relationship to client (if any)"/>
+      </div>
+      <div class="row">
+        <input id="clientName" placeholder="Client full name"/>
+      </div>
+      <div class="row">
+        <input id="dob" type="date" placeholder="Date of birth"/>
+        <input id="medicaid" placeholder="Nevada Medicaid ID"/>
+      </div>
+      <div class="row"><label><input type="checkbox" id="legal"/> I agree to all applicable legal terms, HIPAA/SOC 2 practices, and updates across United Family Caregivers and affiliated sites/apps.</label></div>
+      <button onclick="register()">Continue</button>
+    </div>
+
+    <div class="panel" id="chat" style="display:none;">
+      <div id="messages" class="chat"></div>
+      <div class="row">
+        <input id="input" placeholder="Ask Kloudy..." onkeydown="if(event.key==='Enter'){event.preventDefault();send();}"/>
+        <button onclick="send()">Send</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
