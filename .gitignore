@@ -35,10 +35,15 @@ sandata-*.txt
 api/
 mcp/
 contracts/
-scripts/deploy-*.sh
-scripts/upload-*.bat
-scripts/*sandata*.js
-scripts/*twilio*.js
+scripts/
+
+# SSH and deployment tools (NEVER push these!)
+*ssh*.html
+*ssh*.js
+*.bat
+*.sh
+deploy-*
+test-vps-*
 
 # Docker
 docker-compose.override.yml
