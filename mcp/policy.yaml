@@ -1,0 +1,232 @@
+# MCP Guardrails Policy Configuration
+# Governs AI interactions and ensures compliance with healthcare regulations
+
+version: "1.0.0"
+policy_name: "Kloudy Kare Healthcare AI Guardrails"
+effective_date: "2025-01-01"
+last_updated: "2025-01-01"
+
+# Jurisdiction and Legal Framework
+jurisdiction:
+  primary: "US-NV"  # Nevada, United States
+  additional: ["US-Federal"]
+  
+company_info:
+  legal_name: "NV Care Solutions Inc dba United Family Caregivers"
+  license_type: "Nevada PCS Provider Type 30"
+  license_number: "NV-PCS-2024-001"
+  hipaa_covered_entity: true
+
+# Core Behavioral Rules
+behavior:
+  on_out_of_scope: "brief_redirect"
+  on_medical_advice: "strict_block"
+  on_emergency: "immediate_redirect"
+  cite_kb_sources: true
+  max_conversation_turns: 50
+  session_timeout_minutes: 30
+
+# Content Filtering and Blocks
+strict_blocks:
+  - "medical diagnosis"
+  - "medication advice"
+  - "emergency medical situations"
+  - "legal advice"
+  - "financial advice beyond billing questions"
+  - "personal information of other clients"
+  - "internal company credentials"
+  - "system administration commands"
+
+soft_blocks:
+  - "unrelated personal topics"
+  - "political discussions"
+  - "religious discussions"
+  - "complaints about other providers"
+
+# Allowed Topics and Domains
+allowed_domains:
+  primary_services:
+    - "Personal Care Services (PCS)"
+    - "Homemaker Services"
+    - "Companion Care"
+    - "Respite Care"
+    
+  administrative:
+    - "Eligibility verification"
+    - "Service authorization"
+    - "Billing questions"
+    - "Scheduling assistance"
+    - "Documentation requirements"
+    
+  informational:
+    - "Program information"
+    - "Service descriptions"
+    - "Caregiver qualifications"
+    - "Client rights and responsibilities"
+
+# Knowledge Base Integration
+knowledge_base:
+  retrieval:
+    top_k: 6
+    max_context_tokens: 3500
+    similarity_threshold: 0.7
+    
+  source_types:
+    - "company_policy"
+    - "nevada_regulations"
+    - "medicaid_guidelines"
+    - "hipaa_requirements"
+    - "service_procedures"
+    - "faq"
+    - "training_materials"
+    
+  citation_format: "brief"
+  require_sources: true
+
+# Conversation Flow Management
+conversation_management:
+  greeting_required: true
+  identity_confirmation: "when_handling_phi"
+  escalation_triggers:
+    - "repeated_out_of_scope"
+    - "user_frustration_detected"
+    - "complex_eligibility_issues"
+    - "billing_disputes"
+    - "service_complaints"
+    
+  escalation_message: "I'll connect you with one of our care coordinators who can better assist you. Please call 833.432.6488."
+
+# HIPAA and Privacy Protection
+privacy_protection:
+  phi_detection: true
+  phi_redaction: "mask_partial"
+  consent_verification: "required_for_detailed_info"
+  
+  allowed_phi_discussion:
+    - "client's own information only"
+    - "general eligibility status"
+    - "authorized service types"
+    - "billing summaries (own account)"
+    
+  prohibited_phi_discussion:
+    - "other clients' information"
+    - "detailed medical conditions"
+    - "specific care plans"
+    - "caregiver personal information"
+
+# Logging and Audit
+logging:
+  level: "detailed"
+  include_context: true
+  redaction_mode: "phi_safe"
+  
+  log_events:
+    - "policy_violations"
+    - "escalations"
+    - "phi_access_attempts"
+    - "out_of_scope_requests"
+    - "system_errors"
+    
+  retention_days: 2555  # 7 years for healthcare compliance
+
+# Emergency Protocols
+emergency_handling:
+  keywords:
+    - "emergency"
+    - "urgent"
+    - "911"
+    - "hospital"
+    - "chest pain"
+    - "can't breathe"
+    - "fall"
+    - "injury"
+    
+  response: "If this is a medical emergency, please call 911 immediately. For urgent care needs, contact your healthcare provider or call our 24/7 line at 833.432.6488."
+  
+  escalation: "immediate_human_handoff"
+  log_priority: "critical"
+
+# Integration with Ollama/LLaMA
+ai_model_config:
+  model_name: "llama3.3:latest"
+  temperature: 0.3
+  max_tokens: 500
+  
+  system_prompt: |
+    You are a helpful AI assistant for United Family Caregivers, a Nevada-licensed home care provider. 
+    You help clients with:
+    - Eligibility questions
+    - Service information
+    - Scheduling assistance
+    - Basic billing questions
+    
+    You CANNOT provide:
+    - Medical advice or diagnosis
+    - Emergency assistance (direct to 911)
+    - Other clients' information
+    - Legal or financial advice
+    
+    Always be professional, compassionate, and refer complex issues to human care coordinators.
+    
+  response_guidelines:
+    - "Keep responses concise and helpful"
+    - "Use plain language, avoid medical jargon"
+    - "Provide specific next steps when possible"
+    - "Include contact information for follow-up"
+
+# Phase-Specific Configurations
+phase_overrides:
+  testing:
+    logging_level: "debug"
+    allow_test_scenarios: true
+    relaxed_phi_protection: false  # Still enforce even in testing
+    
+  onlinetest:
+    logging_level: "info"
+    allow_test_scenarios: false
+    enhanced_monitoring: true
+    
+  live:
+    logging_level: "warn"
+    strict_enforcement: true
+    real_time_monitoring: true
+    automated_alerts: true
+
+# Compliance Monitoring
+compliance_checks:
+  hipaa_compliance:
+    enabled: true
+    check_frequency: "every_interaction"
+    
+  nevada_regulations:
+    enabled: true
+    check_frequency: "daily"
+    
+  medicaid_guidelines:
+    enabled: true
+    check_frequency: "weekly"
+
+# Performance Metrics
+performance_targets:
+  response_time_ms: 2000
+  accuracy_rate: 0.95
+  user_satisfaction: 4.0
+  escalation_rate: 0.15
+  
+# Alert Configuration
+alerts:
+  policy_violations:
+    threshold: 5
+    window_minutes: 15
+    recipients: ["compliance@kloudy.ai", "admin@kloudy.ai"]
+    
+  phi_breaches:
+    threshold: 1
+    window_minutes: 1
+    recipients: ["privacy@kloudy.ai", "legal@kloudy.ai"]
+    priority: "critical"
+    
+  system_errors:
+    threshold: 10
+    window_minutes: 5
+    recipients: ["tech@kloudy.ai"]

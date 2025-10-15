@@ -1,0 +1,98 @@
+id: eligibility_intake_v1
+name: "Client Eligibility Intake"
+description: "Collects and validates client eligibility information via SMS or web form"
+owner: "mcp"
+version: "1.0.0"
+
+inputs:
+  - name: client_phone
+    type: string
+    required: true
+    description: "Client's phone number in E.164 format"
+    validation: "^\\+1[0-9]{10}$"
+  
+  - name: client_name
+    type: string
+    required: true
+    description: "Client's full name"
+    validation: "^[A-Za-z\\s]{2,100}$"
+  
+  - name: zip_code
+    type: string
+    required: true
+    description: "Client's ZIP code"
+    validation: "^[0-9]{5}(-[0-9]{4})?$"
+  
+  - name: medicaid_id
+    type: string
+    required: false
+    description: "Client's Medicaid ID if available"
+    validation: "^[A-Za-z0-9]{8,20}$"
+  
+  - name: date_of_birth
+    type: string
+    required: false
+    description: "Client's date of birth (YYYY-MM-DD)"
+    validation: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+
+outputs:
+  - name: eligibility_summary
+    type: object
+    description: "Structured eligibility information"
+    properties:
+      - payer: string
+      - program: string
+      - status: string (eligible|ineligible|pending)
+      - coverage_start: string (date)
+      - coverage_end: string (date)
+      - services_covered: array
+  
+  - name: missing_fields
+    type: array
+    description: "List of required fields that are missing"
+  
+  - name: validation_errors
+    type: array
+    description: "List of validation errors for provided fields"
+  
+  - name: next_steps
+    type: array
+    description: "Recommended next actions for the client"
+
+acceptance_criteria:
+  - "eligibility_summary includes payer and program information"
+  - "missing_fields is an array (may be empty)"
+  - "validation_errors is an array (may be empty)"
+  - "status is one of: eligible, ineligible, pending"
+  - "next_steps provides actionable guidance"
+
+dependencies:
+  - sandata_client_mapping_v1
+  - kb_rag_lookup_v1
+
+error_handling:
+  - invalid_phone: "Return validation error for phone format"
+  - missing_required: "Return list of missing required fields"
+  - service_unavailable: "Return pending status with retry guidance"
+
+compliance:
+  - hipaa: "All PII must be encrypted at rest and in transit"
+  - audit: "All eligibility checks must be logged for compliance"
+  - retention: "Data retained for 7 years per Nevada regulations"
+
+phase_requirements:
+  testing:
+    - mock_data_allowed: true
+    - validation_strict: false
+    - logging_level: debug
+  
+  onlinetest:
+    - mock_data_allowed: false
+    - validation_strict: true
+    - logging_level: info
+  
+  live:
+    - mock_data_allowed: false
+    - validation_strict: true
+    - logging_level: warn
+    - encryption_required: true

@@ -1,0 +1,138 @@
+sequence_id: sms_eligibility_flow_v1
+name: "SMS-Based Eligibility Intake Flow"
+description: "Complete flow for collecting client eligibility via SMS interaction"
+version: "1.0.0"
+owner: "mcp"
+
+trigger:
+  type: "sms_inbound"
+  conditions:
+    - "message contains eligibility keywords"
+    - "sender not in existing client database"
+
+steps:
+  - step: 1
+    name: "Initial Greeting and Data Collection"
+    contract: eligibility_intake_v1
+    inputs:
+      client_phone: "{{ trigger.sender_phone }}"
+      client_name: "{{ prompt_for_name }}"
+      zip_code: "{{ prompt_for_zip }}"
+      medicaid_id: "{{ prompt_for_medicaid_optional }}"
+    success_condition: "outputs.validation_errors.length == 0"
+    retry_on_failure: true
+    max_retries: 3
+    
+  - step: 2
+    name: "Map to Sandata Format"
+    contract: sandata_client_mapping_v1
+    inputs:
+      internal_client_data: "{{ step1.outputs.client_data }}"
+      mapping_direction: "internal_to_sandata"
+    success_condition: "outputs.data_quality_score >= 80"
+    
+  - step: 3
+    name: "Sandata Eligibility Check"
+    contract: sandata_sync_read_v1
+    inputs:
+      sandata_client_data: "{{ step2.outputs.mapped_data }}"
+      check_type: "eligibility_verification"
+    success_condition: "outputs.eligibility_status != 'error'"
+    
+  - step: 4
+    name: "Generate Authorization Link"
+    contract: authorization_flow_v1
+    inputs:
+      client_id: "{{ step1.outputs.client_id }}"
+      authorization_type: "hipaa_consent"
+      delivery_method: "sms_link"
+      contact_info:
+        phone: "{{ trigger.sender_phone }}"
+    condition: "step3.outputs.eligibility_status == 'eligible'"
+    
+  - step: 5
+    name: "Send Results via SMS"
+    contract: sms_response_v1
+    inputs:
+      recipient_phone: "{{ trigger.sender_phone }}"
+      message_template: "eligibility_results"
+      template_data:
+        eligibility_status: "{{ step3.outputs.eligibility_status }}"
+        next_steps: "{{ step1.outputs.next_steps }}"
+        authorization_link: "{{ step4.outputs.secure_link }}"
+
+error_handling:
+  - step_failure:
+      action: "send_error_sms"
+      message: "We're experiencing technical difficulties. Please try again or call {{ company_phone }}"
+      
+  - validation_failure:
+      action: "request_correction"
+      max_attempts: 3
+      escalation: "transfer_to_agent"
+      
+  - eligibility_ineligible:
+      action: "send_information_sms"
+      message_template: "ineligible_guidance"
+
+rollback_strategy:
+  - step: "any"
+    action: "log_partial_completion"
+    cleanup: "remove_incomplete_client_record"
+    notification: "alert_admin_of_failed_flow"
+
+success_metrics:
+  - completion_rate: "> 85%"
+  - user_satisfaction: "> 4.0/5.0"
+  - time_to_completion: "< 5 minutes"
+  - error_rate: "< 5%"
+
+phase_configuration:
+  testing:
+    enabled: true
+    mock_sandata: true
+    test_phone_numbers: ["+15551234567", "+15551234568"]
+    skip_authorization: false
+    
+  onlinetest:
+    enabled: true
+    mock_sandata: false
+    production_integration: true
+    limited_rollout: 50
+    
+  live:
+    enabled: true
+    mock_sandata: false
+    production_integration: true
+    full_rollout: true
+    monitoring_alerts: true
+
+monitoring:
+  - metric: "flow_completion_time"
+    alert_threshold: "> 10 minutes"
+    
+  - metric: "step_failure_rate"
+    alert_threshold: "> 10%"
+    
+  - metric: "user_abandonment_rate"
+    alert_threshold: "> 30%"
+
+dependencies:
+  contracts:
+    - eligibility_intake_v1
+    - sandata_client_mapping_v1
+    - sandata_sync_read_v1
+    - authorization_flow_v1
+    - sms_response_v1
+    
+  services:
+    - mcp_service
+    - twilio_service
+    - postgres_database
+    - ollama_ai_brain
+
+compliance_requirements:
+  - hipaa: "All PII collected must be encrypted and logged"
+  - nevada_regulations: "Eligibility verification must meet state requirements"
+  - medicaid: "Follow CMS guidelines for eligibility verification"
+  - audit_trail: "Complete audit trail for all eligibility determinations"

@@ -31,11 +31,12 @@ sandata-test-files/*.pdf
 sandata-*.json
 sandata-*.txt
 
-# Backend code (keep on VPS only, not in public repo)
-api/
-mcp/
-contracts/
-scripts/
+# Backend/MCP now versioned (do NOT commit secrets)
+# If you want to exclude again, uncomment lines below
+# api/
+# mcp/
+# contracts/
+# scripts/
 
 # SSH and deployment tools (NEVER push these!)
 *ssh*.html

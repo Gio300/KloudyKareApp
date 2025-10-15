@@ -7,11 +7,12 @@
     <link rel="icon" type="image/png" href="KloudyAiChatFavicon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        :root{ --base-font:16px; --zoom:100%; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#fff; min-height:100vh; display:flex; flex-direction:column; overflow:auto; font-size:var(--base-font); zoom: var(--zoom); }
         .header { background:#1f2937; color:#fff; padding:0.75rem 1rem; display:flex; align-items:center; gap:1rem; }
         .spacer{flex:1} .logout{ background:#374151; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;} .notif{position:relative; cursor:pointer; display:flex; align-items:center;} .bell{width:20px; height:20px;} .dot{position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ef4444; border-radius:50%; display:none;}
         .logo{width:32px;height:32px} .company-info h1{font-size:1.1rem;font-weight:600} .company-info p{font-size:0.8rem;opacity:.8}
-    .main-container{flex:1;display:flex;width:95%;margin:0 auto;padding:1rem;gap:1rem;overflow:hidden;}
+    .main-container{flex:1;display:flex;width:95%;margin:0 auto;padding:1rem;gap:1rem;overflow:auto;}
         .left{width:310px;border:1px solid #e5e7eb;border-radius:8px;padding:12px;height:calc(100vh - 140px);overflow-y:auto;overflow-x:hidden}
         .conv{padding:8px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;margin-bottom:8px;cursor:pointer}
         .row{display:flex;justify-content:space-between;align-items:center}
@@ -53,6 +54,10 @@
         .add-note{display:flex;gap:8px;margin-top:8px}
         .add-note input{flex:1;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px}
         .add-note button{padding:8px 12px;background:#3b82f6;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px}
+    /* Display mode simulation */
+    .mode-desktop .main-container{max-width:1200px}
+    .mode-tablet .main-container{max-width:820px}
+    .mode-mobile .main-container{max-width:420px}
     /* Mobile tweaks */
     @media (max-width: 768px){
       .main-container{flex-direction:column;width:100%;padding:.5rem}
@@ -68,6 +73,7 @@
     <div class="company-info"><h1>🎧 Rep Assistant - United Family Caregivers</h1><p>Customer Service Representative Dashboard</p></div>
     <div class="spacer"></div>
     <div id="notif" class="notif" title="Tasks"><img class="bell" alt="bell" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2a7 7 0 0 0-7 7v3.586l-1.707 1.707A1 1 0 0 0 4 16h16a1 1 0 0 0 .707-1.707L19 12.586V9a7 7 0 0 0-7-7zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3z'/></svg>"><span id="dot" class="dot"></span></div>
+    <button class="logout" id="settingsBtn">Settings</button>
     <button class="logout" onclick="window.location.href='../user-ui/login.html'">Logout</button>
   </div>
 
@@ -120,6 +126,31 @@
         <div class="quick-ref-item" onclick="showInChat('Sandata Issues: Service ID errors, Phone type format (Work→Business), Version conflicts, Mixed call types failing')">⚠️ Fix Issues</div>
       </div>
       
+    </div>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div id="settingsOverlay" class="overlay" style="display:none;">
+    <div class="panel" style="max-width:480px">
+      <div class="title"><span>Display Settings</span><button onclick="toggleSettings(false)">Close</button></div>
+      <div class="body">
+        <div style="margin:10px 0;">
+          <label>Mode: </label>
+          <select id="modeSelect" onchange="applyMode(this.value)">
+            <option value="desktop">Desktop</option>
+            <option value="tablet">Tablet</option>
+            <option value="mobile">Mobile</option>
+          </select>
+        </div>
+        <div style="margin:10px 0;">
+          <label>Text size</label>
+          <input id="fontSlider" type="range" min="14" max="22" value="16" oninput="applyFont(this.value)"/>
+        </div>
+        <div style="margin:10px 0;">
+          <label>Zoom</label>
+          <input id="zoomSlider" type="range" min="90" max="130" value="100" oninput="applyZoom(this.value)"/>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -328,7 +359,7 @@
         openUserProfiles();
       } else if(action==='add'){
         const text = prompt('Enter note to add:'); if(!text) return;
-        fetch('https://kloudykare.com/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId: (name||'demo')+'-client', text, by:'Agent' }) })
+        fetch('https://api.kloudykare.com/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId: (name||'demo')+'-client', text, by:'Agent' }) })
           .then(()=> addOverlayMessage('system','Note saved.'))
           .catch(()=> addOverlayMessage('system','Failed to save note.'));
       } else {
@@ -457,7 +488,15 @@
 
     function addMessage(sender, content){ const d=document.createElement('div'); d.className=`message ${sender}`; d.innerHTML = `<strong>${sender==='rep'?'REP':'KLOUDY'}:</strong> ${content}`; chatMessages.appendChild(d); chatMessages.scrollTop=chatMessages.scrollHeight; return d; }
 
-    function addNotePrompt(){ const text = prompt('Enter note to add to client profile:'); if(!text) return; fetch('https://kloudykare.com/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId:'demo-profile', text }) }).then(r=>r.json()).then(()=> addMessage('assistant', `Note saved to profile.`)).catch(()=> addMessage('assistant','Failed to save note.')); }
+    function addNotePrompt(){ const text = prompt('Enter note to add to client profile:'); if(!text) return; 
+      fetch('http://127.0.0.1:16210/mcp/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId:'demo-profile', text, by:'Agent' }) })
+        .then(()=> addMessage('assistant','Note queued (will sync when online).'))
+        .catch(()=> {
+          fetch('https://api.kloudykare.com/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId:'demo-profile', text, by:'Agent' }) })
+            .then(()=> addMessage('assistant','Note saved to profile.'))
+            .catch(()=> addMessage('assistant','Failed to save note.'));
+        });
+    }
 
     // New functions for enhanced UI
     function switchTab(tabId) {
@@ -505,7 +544,7 @@
       const text = prompt(`Add note to ${name}'s ${type} profile:`);
       if(!text) return;
       
-      fetch('https://kloudykare.com/api/notes/save', {
+      fetch('https://api.kloudykare.com/api/notes/save', {
         method:'POST', 
         headers:{'Content-Type':'application/json'}, 
         body: JSON.stringify({ profileId:`${name}-${type}`, text, by:'Agent' })
@@ -705,7 +744,7 @@
       // Clear input if using the inline form
       if(input) input.value = '';
       
-      fetch('https://kloudykare.com/api/notes/save', {
+      fetch('http://127.0.0.1:16210/mcp/notes/save', {
         method:'POST', 
         headers:{'Content-Type':'application/json'}, 
         body: JSON.stringify({ 
@@ -714,8 +753,8 @@
           by: 'Agent',
           timestamp: new Date().toISOString()
         })
-      }).then(r=>r.json()).then(()=> {
-        addMessage('assistant', `Note added to ${profileName}'s profile: "${text}"`);
+      }).then(()=> {
+        addMessage('assistant', `Note queued for ${profileName}. Will sync when online.`);
         
         // Add note to the profile's notes array
         const profile = profiles.find(p => p.name === profileName);
@@ -723,7 +762,9 @@
           profile.notes.push(text);
         }
       }).catch(() => {
-        addMessage('assistant', 'Failed to save note.');
+        fetch('https://api.kloudykare.com/api/notes/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId: profileId || `${profileName.toLowerCase().replace(' ', '-')}`, text, by:'Agent' }) })
+          .then(()=> addMessage('assistant', `Note saved to ${profileName}'s profile.`))
+          .catch(()=> addMessage('assistant', 'Failed to save note.'));
       });
     }
 
@@ -926,21 +967,41 @@ REP QUESTION: ${message}`;
         contextPrompt += `\n\nCURRENT CONVERSATION CONTEXT: Talking with ${currentConv.name} (${currentConv.email || 'no email'})`;
       }
 
-      const thinking=addMessage('assistant','Checking knowledge base...'); 
+      const thinking=addMessage('assistant','Connecting to MCP...'); 
       try{ 
-        const res=await fetch('https://kloudykare.com/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:contextPrompt})}); 
+        // Try MCP first
+        let mcpRes=null; 
+        try{ 
+          const r=await fetch('http://127.0.0.1:16210/mcp/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:contextPrompt})});
+          mcpRes = await r.json();
+        }catch(_){ /* ignore */ }
+        if(mcpRes && mcpRes.response){ 
+          thinking.remove(); 
+          addMessage('assistant', mcpRes.response.trim()); 
+          return; 
+        }
+        // Fallback to VPS API
+        const res=await fetch('https://api.kloudykare.com/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:contextPrompt})}); 
         const data=await res.json(); 
         thinking.remove(); 
-        if(data.response){ 
-          addMessage('assistant', data.response.trim()); 
-        } else { 
-          addMessage('assistant','Please try again.'); 
-        } 
+        if(data.response){ addMessage('assistant', data.response.trim()); } else { addMessage('assistant','Please try again.'); } 
       } catch(e){ 
+        // Show MCP-only fallback if everything fails
         thinking.remove(); 
-        addMessage('assistant','Connection issue.'); 
+        addMessage('assistant','Offline mode: limited KB available.'); 
+        const offline = findLocalKBFallback(message);
+        if(offline){ addMessage('assistant', offline); }
       } 
       sendButton.disabled=false; 
+    }
+
+    // Minimal local fallback (same as MCP KB quick refs)
+    function findLocalKBFallback(message){
+      const m = (message||'').toLowerCase();
+      if(m.includes('eligib')||m.includes('waiver')||m.includes('adl')) return 'Nevada Medicaid + PCS waiver + ADL assessment. Adults 18+ no guardian unless court-appointed.';
+      if(m.includes('intake')) return 'Intake: 1) Patient name & phone 2) Medicaid ID 3) PCS waiver status 4) Caregiver info 5) Three-way call setup';
+      if(m.includes('number')||m.includes('phone')) return 'Rep Line: 833.432.6588; Medicaid Interview: 800-525-2395 (Mon–Fri 8–5)';
+      return '';
     }
 
     sendButton.addEventListener('click', sendMessage); messageInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } });
@@ -966,6 +1027,19 @@ REP QUESTION: ${message}`;
     renderConvs(); 
     addMessage('assistant','Kloudy is ready. Ask me anything.');
     dot.style.display = 'block'; // Show notification dot for practice tasks
+    // Settings init
+    document.getElementById('settingsBtn').addEventListener('click', ()=>toggleSettings(true));
+    // Restore saved
+    const savedMode = localStorage.getItem('ui_mode')||'desktop';
+    applyMode(savedMode); document.getElementById('modeSelect').value = savedMode;
+    const savedFont = localStorage.getItem('ui_font')||'16'; applyFont(savedFont); document.getElementById('fontSlider').value = savedFont;
+    const savedZoom = localStorage.getItem('ui_zoom')||'100'; applyZoom(savedZoom); document.getElementById('zoomSlider').value = savedZoom;
+  </script>
+  <script>
+    function toggleSettings(show){ document.getElementById('settingsOverlay').style.display = show? 'flex':'none'; }
+    function applyMode(mode){ document.body.classList.remove('mode-desktop','mode-tablet','mode-mobile'); document.body.classList.add('mode-'+mode); localStorage.setItem('ui_mode',mode); }
+    function applyFont(px){ document.documentElement.style.setProperty('--base-font', px+'px'); localStorage.setItem('ui_font',px); }
+    function applyZoom(p){ document.documentElement.style.setProperty('--zoom', p+'%'); localStorage.setItem('ui_zoom',p); }
   </script>
 </body>
 </html>

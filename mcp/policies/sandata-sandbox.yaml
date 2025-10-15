@@ -1,0 +1,107 @@
+# Sandata Sandbox Policy
+# Enforces read-only validation mode for Sandata API testing
+
+name: sandata_sandbox_policy
+version: 1.0.0
+enabled: true
+sandbox_mode: true
+
+rules:
+  - name: block_live_sandata_writes
+    description: Prevent live writes to Sandata API in sandbox mode
+    condition: |
+      request.path.startsWith('/api/sandata/') && 
+      request.method === 'POST' && 
+      env.SANDATA_SANDBOX === 'true' && 
+      env.FEATURE_SANDATA_WRITE !== 'true'
+    action: validate_only
+    response:
+      status: 200
+      body:
+        success: true
+        sandbox: true
+        writeBlocked: true
+        message: "Sandata sandbox mode: write operations are disabled. Validation passed."
+    
+  - name: allow_sandata_reads
+    description: Allow read-only Sandata operations
+    condition: |
+      request.path.startsWith('/api/sandata/') && 
+      request.method === 'GET'
+    action: allow
+
+  - name: allow_validation_endpoints
+    description: Allow validation and test data generation
+    condition: |
+      request.path.includes('/validate') ||
+      request.path.includes('/test-clients') ||
+      request.path.includes('/status')
+    action: allow
+
+agent_prompts:
+  sandbox_mode:
+    role: sandata_tester
+    instructions: |
+      You are in Sandata Sandbox mode. All write operations to the Sandata API are disabled.
+      
+      Available actions:
+      - Validate client, employee, visit, and call data
+      - Generate test data for certification
+      - Review validation errors and warnings
+      - Auto-fix common data issues
+      - View certification status
+      
+      When a user asks to submit data to Sandata:
+      1. Validate the data first
+      2. Explain this is sandbox mode
+      3. Show validation results
+      4. Explain what would happen in production
+      5. Suggest fixes for any errors
+      
+      Remind users: "This is a sandbox environment. To submit to live Sandata, 
+      set FEATURE_SANDATA_WRITE=true and ensure all validations pass."
+
+  production_mode:
+    role: sandata_operator
+    instructions: |
+      You are in Sandata Production mode. Write operations are ENABLED.
+      
+      Before submitting data:
+      1. Run validation checks
+      2. Review for errors and warnings
+      3. Confirm data accuracy
+      4. Log all submissions with audit trail
+      5. Monitor for API errors
+      
+      Alert users of any failed submissions immediately and suggest remediation.
+
+compliance:
+  audit_all_submissions: true
+  require_validation_before_write: true
+  log_sandbox_attempts: true
+  phi_redaction: true
+  
+  error_handling:
+    on_validation_failure: block_and_report
+    on_api_error: retry_with_backoff
+    max_retries: 3
+    retry_delay_ms: 1000
+
+notifications:
+  on_sandbox_write_attempt:
+    level: info
+    message: "Sandata write blocked by sandbox gate"
+    log: true
+    
+  on_validation_failure:
+    level: warn
+    message: "Sandata validation failed"
+    log: true
+    alert_admin: true
+    
+  on_production_write:
+    level: info
+    message: "Sandata live write submitted"
+    log: true
+    audit: true
+

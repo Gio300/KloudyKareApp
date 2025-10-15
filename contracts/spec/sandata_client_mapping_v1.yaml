@@ -1,0 +1,122 @@
+id: sandata_client_mapping_v1
+name: "Sandata Client Data Mapping"
+description: "Maps internal client data to Sandata API format and vice versa"
+owner: "agent"
+version: "1.0.0"
+
+inputs:
+  - name: internal_client_data
+    type: object
+    required: true
+    description: "Client data in internal format"
+    properties:
+      - id: string (UUID)
+      - first_name: string
+      - last_name: string
+      - phone: string
+      - email: string
+      - address: object
+      - medicaid_id: string
+      - eligibility_status: string
+  
+  - name: mapping_direction
+    type: string
+    required: true
+    description: "Direction of mapping"
+    enum: ["internal_to_sandata", "sandata_to_internal"]
+  
+  - name: sandata_client_data
+    type: object
+    required: false
+    description: "Client data in Sandata format (for reverse mapping)"
+
+outputs:
+  - name: mapped_data
+    type: object
+    description: "Client data in target format"
+  
+  - name: mapping_warnings
+    type: array
+    description: "Non-critical mapping issues"
+  
+  - name: unmapped_fields
+    type: array
+    description: "Fields that couldn't be mapped"
+  
+  - name: data_quality_score
+    type: number
+    description: "Quality score (0-100) of the mapped data"
+
+acceptance_criteria:
+  - "mapped_data contains all mappable fields"
+  - "mapping_warnings lists any data quality issues"
+  - "unmapped_fields lists fields that have no mapping"
+  - "data_quality_score is between 0 and 100"
+  - "Critical fields (name, phone, medicaid_id) must map successfully"
+
+field_mappings:
+  internal_to_sandata:
+    first_name: "ClientFirstName"
+    last_name: "ClientLastName"
+    phone: "PrimaryPhone"
+    email: "EmailAddress"
+    medicaid_id: "MedicaidNumber"
+    address.street: "Address1"
+    address.city: "City"
+    address.state: "State"
+    address.zip: "ZipCode"
+  
+  sandata_to_internal:
+    ClientFirstName: "first_name"
+    ClientLastName: "last_name"
+    PrimaryPhone: "phone"
+    EmailAddress: "email"
+    MedicaidNumber: "medicaid_id"
+    Address1: "address.street"
+    City: "address.city"
+    State: "address.state"
+    ZipCode: "address.zip"
+
+validation_rules:
+  - field: "phone"
+    rule: "Must be valid E.164 format"
+    severity: "error"
+  
+  - field: "medicaid_id"
+    rule: "Must be alphanumeric, 8-20 characters"
+    severity: "error"
+  
+  - field: "email"
+    rule: "Must be valid email format"
+    severity: "warning"
+  
+  - field: "zip"
+    rule: "Must be 5 or 9 digit ZIP code"
+    severity: "warning"
+
+dependencies:
+  - sandata_api_client_v1
+
+error_handling:
+  - missing_critical_field: "Return error with specific field name"
+  - invalid_format: "Return validation error with correction guidance"
+  - mapping_conflict: "Log warning and use default mapping"
+
+compliance:
+  - data_integrity: "All mappings must preserve data accuracy"
+  - audit_trail: "Log all mapping operations for compliance"
+  - pii_protection: "Ensure PII is handled securely during mapping"
+
+phase_requirements:
+  testing:
+    - allow_partial_mapping: true
+    - validation_warnings_only: true
+  
+  onlinetest:
+    - allow_partial_mapping: false
+    - validation_strict: true
+  
+  live:
+    - allow_partial_mapping: false
+    - validation_strict: true
+    - audit_all_mappings: true

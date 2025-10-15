@@ -1,0 +1,186 @@
+id: billing_rules_v1
+name: "Billing Rules and Rate Calculation"
+description: "Calculates billing amounts based on services, rates, and eligibility"
+owner: "agent"
+version: "1.0.0"
+
+inputs:
+  - name: client_id
+    type: string
+    required: true
+    description: "Internal client UUID"
+  
+  - name: visit_data
+    type: object
+    required: true
+    description: "Visit information"
+    properties:
+      - visit_id: string
+      - caregiver_id: string
+      - start_time: string (ISO timestamp)
+      - end_time: string (ISO timestamp)
+      - services_provided: array
+      - visit_type: string
+  
+  - name: eligibility_info
+    type: object
+    required: true
+    description: "Client eligibility information"
+    properties:
+      - payer: string
+      - program: string
+      - rate_schedule: string
+      - coverage_limits: object
+  
+  - name: billing_period
+    type: object
+    required: true
+    description: "Billing period information"
+    properties:
+      - start_date: string
+      - end_date: string
+      - period_type: string (weekly|monthly|custom)
+
+outputs:
+  - name: billing_summary
+    type: object
+    description: "Complete billing calculation"
+    properties:
+      - total_amount: number
+      - billable_hours: number
+      - rate_per_hour: number
+      - service_breakdown: array
+      - adjustments: array
+      - tax_amount: number
+      - net_amount: number
+  
+  - name: rate_details
+    type: object
+    description: "Detailed rate calculation information"
+    properties:
+      - base_rate: number
+      - modifiers: array
+      - effective_rate: number
+      - rate_source: string
+  
+  - name: compliance_check
+    type: object
+    description: "Compliance validation results"
+    properties:
+      - medicaid_compliant: boolean
+      - coverage_within_limits: boolean
+      - documentation_complete: boolean
+      - billing_codes_valid: boolean
+  
+  - name: billing_errors
+    type: array
+    description: "Any billing calculation errors or warnings"
+
+acceptance_criteria:
+  - "billing_summary includes all required financial fields"
+  - "rate_details shows transparent rate calculation"
+  - "compliance_check validates all regulatory requirements"
+  - "total_amount equals sum of all billable services"
+  - "billing_errors lists any calculation issues"
+
+rate_schedules:
+  nevada_medicaid_pcs:
+    base_rate: 18.50
+    overtime_multiplier: 1.5
+    holiday_multiplier: 2.0
+    minimum_visit_hours: 1.0
+    maximum_daily_hours: 8.0
+    
+  private_pay:
+    base_rate: 25.00
+    overtime_multiplier: 1.5
+    holiday_multiplier: 1.5
+    minimum_visit_hours: 2.0
+    maximum_daily_hours: 12.0
+
+service_codes:
+  personal_care:
+    code: "T1019"
+    description: "Personal Care Services"
+    rate_modifier: 1.0
+    
+  homemaker:
+    code: "T1020"
+    description: "Homemaker Services"
+    rate_modifier: 0.9
+    
+  companion:
+    code: "T1021"
+    description: "Companion Services"
+    rate_modifier: 0.85
+
+billing_rules:
+  - rule: "minimum_visit_duration"
+    description: "All visits must meet minimum duration"
+    validation: "visit_duration >= eligibility.minimum_hours"
+    
+  - rule: "maximum_daily_limit"
+    description: "Daily service hours cannot exceed limit"
+    validation: "daily_hours <= eligibility.max_daily_hours"
+    
+  - rule: "service_authorization"
+    description: "Services must be pre-authorized"
+    validation: "service_code in authorized_services"
+    
+  - rule: "documentation_required"
+    description: "All billable services require documentation"
+    validation: "visit.documentation.length > 0"
+
+adjustments:
+  travel_time:
+    description: "Travel time adjustment"
+    calculation: "min(actual_travel_time, max_billable_travel)"
+    rate_modifier: 0.5
+    
+  mileage:
+    description: "Mileage reimbursement"
+    calculation: "miles * current_mileage_rate"
+    separate_line_item: true
+
+dependencies:
+  - eligibility_verification_v1
+  - service_authorization_v1
+  - tax_calculation_v1
+
+error_handling:
+  - missing_rate_schedule: "Use default rate and flag for review"
+  - invalid_service_code: "Reject billing with specific error"
+  - coverage_exceeded: "Calculate billable portion and flag excess"
+  - documentation_missing: "Mark as non-billable pending documentation"
+
+compliance:
+  - medicaid_billing: "All billing must comply with Nevada Medicaid requirements"
+  - fraud_prevention: "Implement checks for billing fraud indicators"
+  - audit_trail: "Maintain complete audit trail for all billing calculations"
+  - rate_transparency: "Provide clear breakdown of all charges"
+
+validation_checks:
+  - rate_reasonableness: "Verify rates are within acceptable ranges"
+  - time_validation: "Ensure visit times are logical and non-overlapping"
+  - service_eligibility: "Verify client is eligible for billed services"
+  - authorization_validity: "Confirm services are within authorized scope"
+
+phase_requirements:
+  testing:
+    - use_test_rates: true
+    - skip_compliance_checks: false
+    - detailed_logging: true
+    - mock_tax_calculation: true
+  
+  onlinetest:
+    - use_production_rates: true
+    - full_compliance_checks: true
+    - normal_logging: true
+    - real_tax_calculation: true
+  
+  live:
+    - use_production_rates: true
+    - full_compliance_checks: true
+    - audit_logging: true
+    - real_tax_calculation: true
+    - fraud_monitoring: true

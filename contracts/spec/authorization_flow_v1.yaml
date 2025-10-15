@@ -1,0 +1,150 @@
+id: authorization_flow_v1
+name: "Client Authorization and Consent Flow"
+description: "Handles client authorization collection, consent forms, and digital signatures"
+owner: "mcp"
+version: "1.0.0"
+
+inputs:
+  - name: client_id
+    type: string
+    required: true
+    description: "Internal client UUID"
+    validation: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+  
+  - name: authorization_type
+    type: string
+    required: true
+    description: "Type of authorization being collected"
+    enum: ["hipaa_consent", "service_agreement", "billing_authorization", "emergency_contact"]
+  
+  - name: delivery_method
+    type: string
+    required: true
+    description: "How to deliver the authorization form"
+    enum: ["sms_link", "email_link", "web_direct"]
+  
+  - name: contact_info
+    type: object
+    required: true
+    description: "Contact information for delivery"
+    properties:
+      - phone: string
+      - email: string
+  
+  - name: expiration_hours
+    type: number
+    required: false
+    default: 72
+    description: "Hours until authorization link expires"
+
+outputs:
+  - name: authorization_id
+    type: string
+    description: "Unique identifier for this authorization request"
+  
+  - name: secure_link
+    type: string
+    description: "Secure link for client to complete authorization"
+  
+  - name: delivery_status
+    type: string
+    description: "Status of delivery attempt"
+    enum: ["sent", "failed", "pending"]
+  
+  - name: expiration_time
+    type: string
+    description: "ISO timestamp when authorization expires"
+  
+  - name: tracking_info
+    type: object
+    description: "Information for tracking completion"
+    properties:
+      - link_token: string
+      - delivery_method_used: string
+      - sent_timestamp: string
+
+acceptance_criteria:
+  - "authorization_id is a valid UUID"
+  - "secure_link is a valid HTTPS URL with token"
+  - "delivery_status indicates success or failure"
+  - "expiration_time is in the future"
+  - "tracking_info contains necessary tracking data"
+
+form_templates:
+  hipaa_consent:
+    title: "HIPAA Authorization and Consent"
+    fields:
+      - client_signature: "required"
+      - date_signed: "auto"
+      - witness_signature: "optional"
+    compliance: ["hipaa", "nevada_privacy"]
+  
+  service_agreement:
+    title: "Home Care Service Agreement"
+    fields:
+      - client_signature: "required"
+      - guardian_signature: "conditional"
+      - service_start_date: "required"
+      - emergency_contact: "required"
+    compliance: ["nevada_home_care", "medicaid"]
+  
+  billing_authorization:
+    title: "Billing and Payment Authorization"
+    fields:
+      - client_signature: "required"
+      - payment_method: "required"
+      - billing_contact: "required"
+    compliance: ["medicaid_billing", "fraud_prevention"]
+
+signature_requirements:
+  - method: "digital_signature"
+  - ip_address_logging: true
+  - timestamp_required: true
+  - audit_trail: true
+  - pdf_generation: true
+  - secure_storage: true
+
+dependencies:
+  - pdf_generator_v1
+  - secure_link_generator_v1
+  - notification_service_v1
+  - audit_logger_v1
+
+error_handling:
+  - invalid_client_id: "Return error with valid format example"
+  - delivery_failed: "Log failure and provide retry mechanism"
+  - expired_link: "Generate new link and notify client"
+  - signature_invalid: "Request re-signature with guidance"
+
+compliance:
+  - hipaa: "All forms must comply with HIPAA requirements"
+  - esign_act: "Digital signatures must comply with E-SIGN Act"
+  - nevada_law: "Forms must meet Nevada state requirements"
+  - audit_retention: "All authorization records retained for 7 years"
+  - encryption: "All PII encrypted in transit and at rest"
+
+security_measures:
+  - link_expiration: "All links expire within specified timeframe"
+  - single_use_tokens: "Authorization tokens can only be used once"
+  - ip_validation: "Optional IP address validation for high-risk authorizations"
+  - rate_limiting: "Limit authorization requests per client per day"
+
+phase_requirements:
+  testing:
+    - mock_signatures: true
+    - skip_delivery: false
+    - short_expiration: true
+    - test_forms_only: true
+  
+  onlinetest:
+    - mock_signatures: false
+    - real_delivery: true
+    - normal_expiration: true
+    - production_forms: true
+  
+  live:
+    - mock_signatures: false
+    - real_delivery: true
+    - normal_expiration: true
+    - production_forms: true
+    - full_compliance: true

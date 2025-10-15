@@ -1,0 +1,174 @@
+sequence_id: billing_generation_flow_v1
+name: "Automated Billing Generation Flow"
+description: "End-to-end flow for generating client bills from approved visits"
+version: "1.0.0"
+owner: "agent"
+
+trigger:
+  type: "scheduled"
+  schedule: "0 2 * * 1" # Every Monday at 2 AM
+  conditions:
+    - "billing_period_end_reached"
+    - "visits_approved_for_billing"
+
+steps:
+  - step: 1
+    name: "Collect Billable Visits"
+    contract: visit_aggregation_v1
+    inputs:
+      billing_period: "{{ trigger.billing_period }}"
+      status_filter: "approved"
+      include_adjustments: true
+    success_condition: "outputs.visits_found.length > 0"
+    
+  - step: 2
+    name: "Calculate Billing for Each Client"
+    contract: billing_rules_v1
+    inputs:
+      client_visits: "{{ step1.outputs.visits_by_client }}"
+      billing_period: "{{ trigger.billing_period }}"
+      rate_schedules: "{{ get_current_rate_schedules }}"
+    parallel_execution: true
+    success_condition: "outputs.billing_errors.length == 0"
+    
+  - step: 3
+    name: "Validate Compliance"
+    contract: billing_compliance_check_v1
+    inputs:
+      billing_summaries: "{{ step2.outputs.billing_summaries }}"
+      regulatory_requirements: "{{ get_current_regulations }}"
+    success_condition: "outputs.compliance_violations.length == 0"
+    
+  - step: 4
+    name: "Generate PDF Invoices"
+    contract: pdf_invoice_generation_v1
+    inputs:
+      billing_data: "{{ step2.outputs.billing_summaries }}"
+      template: "standard_invoice"
+      include_attachments: true
+    parallel_execution: true
+    success_condition: "outputs.generation_errors.length == 0"
+    
+  - step: 5
+    name: "Submit to Sandata"
+    contract: sandata_billing_submit_v1
+    inputs:
+      billing_data: "{{ step2.outputs.billing_summaries }}"
+      pdf_invoices: "{{ step4.outputs.invoice_files }}"
+      submission_type: "weekly_batch"
+    condition: "{{ feature_flags.FEATURE_SANDATA_WRITE == true }}"
+    success_condition: "outputs.submission_status == 'accepted'"
+    
+  - step: 6
+    name: "Archive and Audit"
+    contract: billing_archive_v1
+    inputs:
+      billing_summaries: "{{ step2.outputs.billing_summaries }}"
+      pdf_files: "{{ step4.outputs.invoice_files }}"
+      submission_results: "{{ step5.outputs.submission_results }}"
+      archive_location: "{{ get_archive_path }}"
+
+error_handling:
+  - compliance_violation:
+      action: "halt_billing_process"
+      notification: "alert_compliance_team"
+      escalation: "require_manual_review"
+      
+  - sandata_submission_failure:
+      action: "retry_with_backoff"
+      max_retries: 3
+      fallback: "generate_manual_submission_report"
+      
+  - pdf_generation_failure:
+      action: "retry_single_invoice"
+      fallback: "generate_text_invoice"
+      notification: "alert_billing_team"
+
+rollback_strategy:
+  - step: "sandata_submission"
+    action: "mark_as_pending_resubmission"
+    cleanup: "preserve_generated_invoices"
+    
+  - step: "compliance_check"
+    action: "quarantine_non_compliant_bills"
+    notification: "alert_compliance_officer"
+
+success_metrics:
+  - billing_accuracy: "99.5%"
+  - processing_time: "< 30 minutes for 100 clients"
+  - compliance_rate: "100%"
+  - submission_success_rate: "> 95%"
+
+phase_configuration:
+  testing:
+    enabled: true
+    mock_sandata_submission: true
+    test_client_subset: 5
+    skip_pdf_generation: false
+    detailed_logging: true
+    
+  onlinetest:
+    enabled: true
+    mock_sandata_submission: false
+    limited_client_set: 50
+    real_pdf_generation: true
+    compliance_alerts: true
+    
+  live:
+    enabled: true
+    mock_sandata_submission: false
+    all_clients: true
+    real_pdf_generation: true
+    full_compliance_monitoring: true
+    automated_alerts: true
+
+monitoring:
+  - metric: "billing_processing_time"
+    alert_threshold: "> 1 hour"
+    
+  - metric: "compliance_violation_rate"
+    alert_threshold: "> 0%"
+    
+  - metric: "sandata_submission_failure_rate"
+    alert_threshold: "> 5%"
+    
+  - metric: "invoice_generation_error_rate"
+    alert_threshold: "> 1%"
+
+dependencies:
+  contracts:
+    - visit_aggregation_v1
+    - billing_rules_v1
+    - billing_compliance_check_v1
+    - pdf_invoice_generation_v1
+    - sandata_billing_submit_v1
+    - billing_archive_v1
+    
+  services:
+    - postgres_database
+    - sandata_api
+    - pdf_generator
+    - file_storage
+    - audit_logger
+
+compliance_requirements:
+  - medicaid_billing: "All billing must comply with CMS requirements"
+  - nevada_regulations: "Follow Nevada Medicaid billing guidelines"
+  - hipaa: "Protect all client information in billing process"
+  - audit_retention: "Retain all billing records for 7 years"
+  - fraud_prevention: "Implement fraud detection checks"
+
+notification_rules:
+  - event: "billing_completed"
+    recipients: ["billing_manager", "finance_team"]
+    template: "weekly_billing_summary"
+    
+  - event: "compliance_violation"
+    recipients: ["compliance_officer", "legal_team"]
+    template: "compliance_alert"
+    priority: "high"
+    
+  - event: "sandata_submission_failed"
+    recipients: ["billing_team", "it_support"]
+    template: "submission_failure_alert"
+    priority: "medium"

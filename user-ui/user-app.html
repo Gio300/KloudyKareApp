@@ -46,7 +46,7 @@
     function $(id){ return document.getElementById(id); }
 
     function showDot(show){ $("dot").style.display = show ? 'block' : 'none'; }
-    function logout(){ fetch('https://kloudykare.com/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='login.html'; }); }
+    function logout(){ fetch('https://api.kloudykare.com/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='login.html'; }); }
     function goLogin(){ window.location.href = '/login.html'; }
     function setAuthButton(mode){
       const btn = $("authBtn");
@@ -97,7 +97,7 @@
       add('ai', 'Thanks! Your profile is created. I can answer questions about your Medicaid benefits, eligibility, and services.');
 
       if (clientName && dob && medicaid){
-        try { await fetch('https://kloudykare.com/api/voice/auto-trigger', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientName, dob, medicaid }) }); } catch(e) {}
+        try { await fetch('https://api.kloudykare.com/api/voice/auto-trigger', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientName, dob, medicaid }) }); } catch(e) {}
         // Simulate Twilio call data collection for eligibility
         setTimeout(() => {
           eligibilityData = {
@@ -122,8 +122,24 @@
       }
       
       const rolePrompt = 'You are Kloudy Client Assistant, helping clients with their Medicaid benefits, eligibility questions, and service information. Be helpful, friendly, and HIPAA-compliant.';
-      const r = await fetch('https://kloudykare.com/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: rolePrompt + "\nClient: " + msg }) });
-      const j = await r.json(); add('ai', (j.response||'...'));
+      // Try MCP first; if unavailable, still answer with minimal offline KB
+      let reply = null;
+      try{ const r = await fetch('http://127.0.0.1:16210/mcp/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message: rolePrompt + "\nClient: " + msg })}); const j = await r.json(); if((j.confidence||0)>=0.6 && j.response) reply = j.response; }catch(_){ }
+      if(!reply){
+        try{ const r = await fetch('https://api.kloudykare.com/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: rolePrompt + "\nClient: " + msg }) }); const j = await r.json(); reply = j.response||''; }catch(_){ }
+      }
+      if(!reply){
+        reply = offlineFallback(msg);
+      }
+      add('ai', reply);
+    }
+
+    function offlineFallback(msg){
+      const m=(msg||'').toLowerCase();
+      if(m.includes('eligib')||m.includes('waiver')||m.includes('adl')) return 'Nevada Medicaid + PCS waiver + ADL assessment. Adults 18+ no guardian unless court-appointed.';
+      if(m.includes('intake')) return 'Intake: 1) Patient name & phone 2) Medicaid ID 3) PCS waiver status 4) Caregiver info 5) Three-way call setup';
+      if(m.includes('number')||m.includes('phone')) return 'Rep Line: 833.432.6588; Medicaid Interview: 800-525-2395 (Mon–Fri 8–5)';
+      return 'Offline mode: I can help with basic references. Ask about eligibility, intake steps, or key numbers.';
     }
 
     function add(who, text){ const d=document.createElement('div'); d.className='msg '+(who==='user'?'user':'ai'); d.textContent=text; $("messages").appendChild(d); $("messages").scrollTop = $("messages").scrollHeight; }
@@ -329,6 +345,8 @@
           addClientTask('Review your service plan', 'review');
         }, 2000);
       }
+      // scroll always enabled for small screens
+      document.body.style.overflow = 'auto';
     });
   </script>
 </head>
@@ -337,6 +355,11 @@
     <img src="/KloudyAiChatFavicon.png" style="width:24px; height:24px; margin-right:8px;" alt="Kloudy Logo"/>
     <strong>Kloudy Client Portal</strong>
     <div class="spacer"></div>
+    <div style="margin-right:8px;">
+      <button onclick="document.body.style.zoom='100%';">Desktop</button>
+      <button onclick="document.body.style.zoom='95%';">Tablet</button>
+      <button onclick="document.body.style.zoom='90%';">Mobile</button>
+    </div>
     <button onclick="showQuickReferences()" style="margin-right:8px; padding:6px 12px; background:#7c3aed; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">📚 Quick Ref</button>
     <button onclick="showRespiteRequest()" style="margin-right:8px; padding:6px 12px; background:#dc2626; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:12px;">🏠 Respite (Coming Soon)</button>
     <div class="notify" onclick="showTasks()"><img class="bell" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='gray'><path d='M12 2a7 7 0 0 0-7 7v3.586l-1.707 1.707A1 1 0 0 0 4 16h16a1 1 0 0 0 .707-1.707L19 12.586V9a7 7 0 0 0-7-7zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3z'/></svg>"/><span id="dot" class="dot"></span></div>

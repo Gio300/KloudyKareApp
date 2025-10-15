@@ -1,0 +1,14 @@
+{
+  "quickRefs": {
+    "numbers": "Rep Line: 833.432.6588; Medicaid Interview: 800-525-2395 (Mon–Fri 8–5)",
+    "eligibility": "Nevada Medicaid + PCS waiver + ADL assessment. Adults 18+ no guardian unless court-appointed.",
+    "intake": "1) Patient name & phone 2) Nevada Medicaid ID 3) PCS waiver status 4) Caregiver info 5) Three-way call setup"
+  },
+  "faq": [
+    {"q":"guardianship","a":"Adults 18+ do not need guardians unless court-appointed."},
+    {"q":"job disqualify","a":"Having a job does not disqualify PCS services."},
+    {"q":"provider select","a":"During interview select NV Care Solutions as provider."}
+  ]
+}
+
+
