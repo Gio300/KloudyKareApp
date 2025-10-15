@@ -137,23 +137,23 @@
       const a = Number(document.getElementById('capA').textContent);
       const b = Number(document.getElementById('capB').textContent);
       const answer = Number(document.getElementById('capAns').value);
-      const res = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ identifier, password, captcha:{a,b,answer} }) });
+      const res = await fetch('https://kloudykare.com/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ identifier, password, captcha:{a,b,answer} }) });
       if(!res.ok){ const j = await res.json().catch(()=>({})); alert(j.error||'Invalid credentials'); genCaptcha(); return; }
       const data = await res.json();
       if (data.role === 'admin') {
-        window.location.href = 'http://localhost:8717/rep-assistant.html';
+        window.location.href = '../agent-ui/rep-assistant.html';
       } else {
-        window.location.href = '/user-app.html';
+        window.location.href = 'user-app.html';
       }
     }
     function toRegister(){ window.location.href = '/user-app.html#register'; }
     async function forgotPassword(){
       const identifier = prompt('Enter your email, phone, or username:'); if(!identifier) return;
-      const r = await fetch('/api/auth/forgot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ identifier }) });
+      const r = await fetch('https://kloudykare.com/api/auth/forgot', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ identifier }) });
       const j = await r.json(); if(!j.success){ alert(j.error||'User not found'); return; }
       const answer = prompt(`Security Question (${j.securityQuestion}):`); if(!answer) return;
       const newPassword = prompt('Enter new password:'); if(!newPassword) return;
-      const rr = await fetch('/api/auth/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ identifier, securityAnswer: answer, newPassword }) });
+      const rr = await fetch('https://kloudykare.com/api/auth/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ identifier, securityAnswer: answer, newPassword }) });
       const jj = await rr.json(); if(!jj.success){ alert(jj.error||'Reset failed'); return; }
       alert('Password reset. Please login.');
     }

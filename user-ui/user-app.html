@@ -46,7 +46,7 @@
     function $(id){ return document.getElementById(id); }
 
     function showDot(show){ $("dot").style.display = show ? 'block' : 'none'; }
-    function logout(){ fetch('/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='/login.html'; }); }
+    function logout(){ fetch('https://kloudykare.com/api/auth/logout',{method:'POST'}).finally(()=>{ window.location.href='login.html'; }); }
     function goLogin(){ window.location.href = '/login.html'; }
     function setAuthButton(mode){
       const btn = $("authBtn");
@@ -97,7 +97,7 @@
       add('ai', 'Thanks! Your profile is created. I can answer questions about your Medicaid benefits, eligibility, and services.');
 
       if (clientName && dob && medicaid){
-        try { await fetch('/api/voice/auto-trigger', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientName, dob, medicaid }) }); } catch(e) {}
+        try { await fetch('https://kloudykare.com/api/voice/auto-trigger', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ clientName, dob, medicaid }) }); } catch(e) {}
         // Simulate Twilio call data collection for eligibility
         setTimeout(() => {
           eligibilityData = {
@@ -122,7 +122,7 @@
       }
       
       const rolePrompt = 'You are Kloudy Client Assistant, helping clients with their Medicaid benefits, eligibility questions, and service information. Be helpful, friendly, and HIPAA-compliant.';
-      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: rolePrompt + "\nClient: " + msg }) });
+      const r = await fetch('https://kloudykare.com/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: rolePrompt + "\nClient: " + msg }) });
       const j = await r.json(); add('ai', (j.response||'...'));
     }
 

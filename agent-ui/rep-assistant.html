@@ -68,7 +68,7 @@
     <div class="company-info"><h1>🎧 Rep Assistant - United Family Caregivers</h1><p>Customer Service Representative Dashboard</p></div>
     <div class="spacer"></div>
     <div id="notif" class="notif" title="Tasks"><img class="bell" alt="bell" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2a7 7 0 0 0-7 7v3.586l-1.707 1.707A1 1 0 0 0 4 16h16a1 1 0 0 0 .707-1.707L19 12.586V9a7 7 0 0 0-7-7zm0 20a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3z'/></svg>"><span id="dot" class="dot"></span></div>
-    <button class="logout" onclick="window.location.href='http://localhost:8913/login.html'">Logout</button>
+    <button class="logout" onclick="window.location.href='../user-ui/login.html'">Logout</button>
   </div>
 
   <div class="main-container">
@@ -328,7 +328,7 @@
         openUserProfiles();
       } else if(action==='add'){
         const text = prompt('Enter note to add:'); if(!text) return;
-        fetch('/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId: (name||'demo')+'-client', text, by:'Agent' }) })
+        fetch('https://kloudykare.com/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId: (name||'demo')+'-client', text, by:'Agent' }) })
           .then(()=> addOverlayMessage('system','Note saved.'))
           .catch(()=> addOverlayMessage('system','Failed to save note.'));
       } else {
@@ -457,7 +457,7 @@
 
     function addMessage(sender, content){ const d=document.createElement('div'); d.className=`message ${sender}`; d.innerHTML = `<strong>${sender==='rep'?'REP':'KLOUDY'}:</strong> ${content}`; chatMessages.appendChild(d); chatMessages.scrollTop=chatMessages.scrollHeight; return d; }
 
-    function addNotePrompt(){ const text = prompt('Enter note to add to client profile:'); if(!text) return; fetch('/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId:'demo-profile', text }) }).then(r=>r.json()).then(()=> addMessage('assistant', `Note saved to profile.`)).catch(()=> addMessage('assistant','Failed to save note.')); }
+    function addNotePrompt(){ const text = prompt('Enter note to add to client profile:'); if(!text) return; fetch('https://kloudykare.com/api/notes/save',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ profileId:'demo-profile', text }) }).then(r=>r.json()).then(()=> addMessage('assistant', `Note saved to profile.`)).catch(()=> addMessage('assistant','Failed to save note.')); }
 
     // New functions for enhanced UI
     function switchTab(tabId) {
@@ -505,7 +505,7 @@
       const text = prompt(`Add note to ${name}'s ${type} profile:`);
       if(!text) return;
       
-      fetch('/api/notes/save', {
+      fetch('https://kloudykare.com/api/notes/save', {
         method:'POST', 
         headers:{'Content-Type':'application/json'}, 
         body: JSON.stringify({ profileId:`${name}-${type}`, text, by:'Agent' })
@@ -705,7 +705,7 @@
       // Clear input if using the inline form
       if(input) input.value = '';
       
-      fetch('/api/notes/save', {
+      fetch('https://kloudykare.com/api/notes/save', {
         method:'POST', 
         headers:{'Content-Type':'application/json'}, 
         body: JSON.stringify({ 
@@ -928,7 +928,7 @@ REP QUESTION: ${message}`;
 
       const thinking=addMessage('assistant','Checking knowledge base...'); 
       try{ 
-        const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:contextPrompt})}); 
+        const res=await fetch('https://kloudykare.com/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:contextPrompt})}); 
         const data=await res.json(); 
         thinking.remove(); 
         if(data.response){ 
